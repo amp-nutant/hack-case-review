@@ -1,320 +1,115 @@
-/* Page wrapper */
-.page {
-  padding: clamp(32px, 4vw, 40px) clamp(24px, 5vw, 40px);
-  min-height: calc(100vh - 56px);
-  background: #f8f9fa;
-  position: relative;
-}
-
-/* Removed gradient overlays to match main page background */
-
-.container {
-  margin: 0 auto;
-  width: 100%;
-  position: relative;
-}
-
 .reportsPage {
-  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Loading state */
+.header {
+  margin-bottom: 32px;
+}
+
 .loadingContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  padding: 120px 40px;
+  padding: 80px;
 }
 
-/* ===== TOP ACTIONS BAR ===== */
-.topActions {
-  margin-bottom: clamp(18px, 2.5vw, 28px);
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.searchWrap {
-  flex: 1;
-  max-width: min(100%, 520px);
-  min-width: min(320px, 50%);
-}
-
-.searchField {
-  position: relative;
-  width: 100%;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #617289;
-  font-size: 3vh;
-  pointer-events: none;
-  line-height: 1;
-}
-
-.searchInput {
-  width: 100%;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  padding: 0 16px 0 52px;
-  font-size: 14px;
-  color: #111418;
-  outline: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 150ms ease;
-  text-align: center;
-  direction: ltr;
-  line-height: 44px;
-}
-
-.searchInput::placeholder {
-  color: #617289;
-}
-
-.searchInput:hover {
-  background: #ffffff;
-}
-
-.searchInput:focus {
-  border-color: #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(19, 109, 236, 0.1);
-}
-
-.searchClear {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: none;
-  background: #e5e7eb;
-  color: #6b7280;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.searchClear:hover {
-  background: #d1d5db;
-}
-
-/* ===== PAGE HEADER ===== */
-.pageHeader {
-  margin-top: 12px;
-  margin-bottom: clamp(20px, 3vw, 32px);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.pageTitle {
-  font-size: clamp(28px, 3.5vw, 36px);
-  font-weight: 900;
-  color: #111418;
-  margin: 0;
-  letter-spacing: -0.025em;
-  line-height: 1.25;
-}
-
-.pageSubtitle {
-  font-size: clamp(14px, 1.5vw, 16px);
-  color: #617289;
-  margin: 0;
-  font-weight: 500;
-  line-height: 1.55;
-  max-width: 72ch;
-}
-
-/* ===== ERROR BANNER ===== */
 .errorBanner {
-  background: #fef2f2;
+  background-color: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
   color: #dc2626;
-  font-size: 14px;
-  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
 }
 
-/* ===== EMPTY STATE ===== */
+.tableContainer {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  padding: 100px 40px;
+  padding: 80px 40px;
   text-align: center;
 }
 
 .emptyIcon {
-  font-size: 56px;
+  font-size: 64px;
   opacity: 0.5;
 }
 
-/* ===== REPORTS GRID ===== */
-.reportsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  padding: 20px;
-  background: #f4f5f6;
-  border-radius: 12px;
-  align-items: stretch;
-}
-
-/* ===== REPORT CARD ===== */
-.reportCard {
+.table {
   width: 100%;
-  min-height: 280px;
-  border-radius: 5px;
-  background-color: #fff;
-  cursor: pointer;
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  border-collapse: collapse;
 }
 
-.reportCard:hover {
-  box-shadow: 0px 0px 5px gray;
-  border-radius: 5px;
-  transform: translateY(-1px);
+.table thead {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-/* Make Ant Card internals stretch consistently */
-.reportCard :global(.ant-card-body) {
-  height: 100%;
+.table th {
+  text-align: left;
+  padding: 16px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
 }
 
-.reportCard :global(.ant-card-head-title) {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.table td {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.cardExtra {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.table tbody tr:hover {
+  background-color: #f9fafb;
 }
 
-.menuIcon {
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background 150ms ease;
+.fileIcon {
+  font-size: 24px;
 }
 
-.menuIcon:hover {
-  background: #f3f4f6;
+.reportName {
+  font-weight: 500;
+  color: #111827;
 }
 
-/* ===== ISSUE CHIPS ===== */
-.issueChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.fileName {
+  font-size: 12px;
 }
 
-.issueChip {
+.statusBadge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 500;
-  border: 1px solid;
+  text-transform: capitalize;
 }
 
-/* Distinct colors matching reference */
-.issueChipBlue {
-  background: #eff6ff;
-  color: #1e40af;
-  border-color: #dbeafe;
-}
-
-.issueChipPurple {
-  background: #faf5ff;
-  color: #6b21a8;
-  border-color: #e9d5ff;
-}
-
-.issueChipPink {
-  background: #fdf2f8;
-  color: #9f1239;
-  border-color: #fce7f3;
-}
-
-.issueChipOrange {
-  background: #fff7ed;
-  color: #9a3412;
-  border-color: #fed7aa;
-}
-
-.issueChipGreen {
-  background: #f0fdf4;
+.statusCompleted {
+  background-color: #d1fae5;
   color: #065f46;
-  border-color: #d1fae5;
 }
 
-.issueChipTeal {
-  background: #f0fdfa;
-  color: #115e59;
-  border-color: #ccfbf1;
+.statusProcessing {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
-.issueChipIndigo {
-  background: #eef2ff;
-  color: #3730a3;
-  border-color: #e0e7ff;
-}
-
-.issueChipRed {
-  background: #fef2f2;
+.statusFailed {
+  background-color: #fee2e2;
   color: #991b1b;
-  border-color: #fee2e2;
-}
-
-.issueChipGray {
-  background: #f9fafb;
-  color: #475569;
-  border-color: #e5e7eb;
-}
-
-/* ===== DATE WRAPPER ===== */
-.dateWrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.calendarIcon {
-  color: #64748b;
-}
-
-/* ===== MOBILE OPTIMIZATIONS ===== */
-@media (max-width: 640px) {
-  .searchWrap {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .reportsGrid {
-    grid-template-columns: 1fr;
-    padding: 14px;
-    gap: 12px;
-  }
 }
