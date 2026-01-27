@@ -73,8 +73,8 @@ async function main() {
       console.log(`📁 Case data saved to: ${caseFile}`);
     }
 
-    // Analyze the case
-    console.log('\n🤖 Analyzing with LLM...');
+    // Analyze the case with LLM (includes tag validation against predefined lists)
+    console.log('\n🤖 Analyzing with LLM (including tag validation against predefined lists)...');
     const startTime = Date.now();
     
     const analysis = await analyzeCase(caseData);
@@ -145,73 +145,172 @@ function printAnalysisSummary(result) {
   console.log(`   Technical Area: ${a.issueSummary?.technicalArea || 'N/A'}`);
   console.log(`   Root Cause: ${a.issueSummary?.rootCause || 'N/A'}`);
 
-  // Tags
-  console.log('\n🏷️  CLASSIFICATION TAGS');
+  // Tag Validation (LLM Analysis with Predefined Lists)
+  const tv = a.tagValidation;
+  console.log('\n🏷️  TAG VALIDATION (LLM Analysis vs Predefined Lists)');
   console.log('─'.repeat(80));
-  console.log(`   Problem Categories: ${a.tags?.problemCategory?.join(', ') || 'N/A'}`);
-  console.log(`   Product Areas: ${a.tags?.productArea?.join(', ') || 'N/A'}`);
-  console.log(`   Technical Complexity: ${a.tags?.technicalComplexity || 'N/A'}`);
-  console.log(`   Issue Type: ${a.tags?.issueType || 'N/A'}`);
-  console.log(`   Resolution Type: ${a.tags?.resolutionType || 'N/A'}`);
+  if (tv) {
+    // Open Tags
+    console.log(`   OPEN TAGS: Score ${tv.openTags?.score || 'N/A'}/10`);
+    console.log(`     Applied:     ${tv.openTags?.appliedTags?.join(', ') || 'None'}`);
+    console.log(`     Recommended: ${tv.openTags?.recommendedTags?.join(', ') || 'N/A'}`);
+    console.log(`     Correct:     ${tv.openTags?.correctlyApplied?.join(', ') || 'None'}`);
+    if (tv.openTags?.missingTags?.length > 0) {
+      console.log(`     Missing:     ${Array.isArray(tv.openTags.missingTags) ? tv.openTags.missingTags.join(', ') : tv.openTags.missingTags}`);
+    }
+    if (tv.openTags?.incorrectlyApplied?.length > 0) {
+      console.log(`     Incorrect:   ${Array.isArray(tv.openTags.incorrectlyApplied) ? tv.openTags.incorrectlyApplied.join(', ') : tv.openTags.incorrectlyApplied}`);
+    }
+    console.log(`     Explanation: ${tv.openTags?.explanation || 'N/A'}`);
+    
+    // Close Tags
+    console.log(`\n   CLOSE TAGS: Score ${tv.closeTags?.score || 'N/A'}/10`);
+    console.log(`     Applied:     ${tv.closeTags?.appliedTags?.join(', ') || 'None'}`);
+    console.log(`     Recommended: ${tv.closeTags?.recommendedTags?.join(', ') || 'N/A'}`);
+    console.log(`     Correct:     ${tv.closeTags?.correctlyApplied?.join(', ') || 'None'}`);
+    if (tv.closeTags?.missingTags?.length > 0) {
+      console.log(`     Missing:     ${Array.isArray(tv.closeTags.missingTags) ? tv.closeTags.missingTags.join(', ') : tv.closeTags.missingTags}`);
+    }
+    if (tv.closeTags?.incorrectlyApplied?.length > 0) {
+      console.log(`     Incorrect:   ${Array.isArray(tv.closeTags.incorrectlyApplied) ? tv.closeTags.incorrectlyApplied.join(', ') : tv.closeTags.incorrectlyApplied}`);
+    }
+    console.log(`     Explanation: ${tv.closeTags?.explanation || 'N/A'}`);
+    
+    // Overall
+    console.log(`\n   OVERALL TAG SCORE: ${tv.overallScore || 'N/A'}/10`);
+    console.log(`   ${tv.overallExplanation || ''}`);
+  } else {
+    console.log(`   No tag validation data available`);
+  }
+
+  // Issue Classification
+  console.log('\n🔍 ISSUE CLASSIFICATION');
+  console.log('─'.repeat(80));
+  const ic = a.issueClassification || {};
+  
+  const bugInfo = ic.isBug || {};
+  console.log(`   Is Bug:              ${bugInfo.verdict ?? 'N/A'} (${bugInfo.confidence || 'N/A'} confidence)`);
+  if (bugInfo.verdict === true) {
+    console.log(`     → Bug Type: ${bugInfo.bugType || 'N/A'}`);
+    console.log(`     → Evidence: ${bugInfo.evidence || 'N/A'}`);
+  }
+  
+  const configInfo = ic.isConfigurationIssue || {};
+  console.log(`   Is Configuration:    ${configInfo.verdict ?? 'N/A'} (${configInfo.confidence || 'N/A'} confidence)`);
+  if (configInfo.verdict === true) {
+    console.log(`     → Config Type: ${configInfo.configurationType || 'N/A'}`);
+  }
+  
+  const customerErr = ic.isCustomerError || {};
+  console.log(`   Is Customer Error:   ${customerErr.verdict ?? 'N/A'} (${customerErr.confidence || 'N/A'} confidence)`);
+  if (customerErr.verdict === true) {
+    console.log(`     → Error Type: ${customerErr.errorType || 'N/A'}`);
+    console.log(`     → Description: ${customerErr.description || 'N/A'}`);
+  }
+  
+  const nonNtnx = ic.isNonNutanixIssue || {};
+  console.log(`   Is Non-Nutanix:      ${nonNtnx.verdict ?? 'N/A'} (${nonNtnx.confidence || 'N/A'} confidence)`);
+  if (nonNtnx.verdict === true) {
+    console.log(`     → Actual Source: ${nonNtnx.actualSource || 'N/A'}`);
+    console.log(`     → Description: ${nonNtnx.description || 'N/A'}`);
+  }
+
+  // Resolution Analysis
+  console.log('\n✅ RESOLUTION ANALYSIS');
+  console.log('─'.repeat(80));
+  const ra = a.resolutionAnalysis || {};
+  console.log(`   Resolution Method:   ${ra.resolutionMethod || 'N/A'}`);
+  console.log(`   Resolved By:         ${ra.resolvedBy?.who || 'N/A'} (${ra.resolvedBy?.confidence || 'N/A'} confidence)`);
+  console.log(`   Self-Resolved:       ${ra.wasSelfResolved?.verdict ?? 'N/A'}`);
+  if (ra.wasSelfResolved?.verdict === true) {
+    console.log(`     → Evidence: ${ra.wasSelfResolved?.evidence || 'N/A'}`);
+  }
+  console.log(`   Support Contribution: ${ra.supportContribution?.level || 'N/A'}`);
+  console.log(`   Resolution Quality:  ${ra.resolutionQuality?.score || 'N/A'}/10`);
+  console.log(`     → Permanent Fix: ${ra.resolutionQuality?.isPermanentFix ?? 'N/A'}`);
+  console.log(`     → Is Workaround: ${ra.resolutionQuality?.isWorkaround ?? 'N/A'}`);
+  console.log(`     → Will Recur: ${ra.resolutionQuality?.willRecur || 'N/A'}`);
+
+  // RCA Assessment
+  console.log('\n🔬 RCA ASSESSMENT');
+  console.log('─'.repeat(80));
+  const rca = a.rcaAssessment || {};
+  console.log(`   RCA Performed:       ${rca.rcaPerformed ?? 'N/A'}`);
+  console.log(`   RCA Quality:         ${rca.rcaQuality?.score || 'N/A'}/10 - ${rca.rcaQuality?.verdict || 'N/A'}`);
+  console.log(`   RCA Conclusive:      ${rca.rcaConclusive?.verdict ?? 'N/A'}`);
+  if (rca.rcaConclusive?.evidence) {
+    console.log(`     → Evidence: ${rca.rcaConclusive.evidence}`);
+  }
+  console.log(`   RCA Actionable:      ${rca.rcaActionable?.verdict ?? 'N/A'}`);
+  if (rca.rcaActionable?.actionsIdentified?.length > 0) {
+    console.log(`     → Actions Identified: ${rca.rcaActionable.actionsIdentified.join('; ')}`);
+  }
+  if (rca.rcaActionable?.missingActions?.length > 0) {
+    console.log(`     → Missing Actions: ${rca.rcaActionable.missingActions.join('; ')}`);
+  }
+  if (rca.rcaGaps?.length > 0) {
+    console.log(`   RCA Gaps:            ${rca.rcaGaps.join('; ')}`);
+  }
+
+  // Classification Tags
+  console.log('\n🏷️  DERIVED CLASSIFICATION');
+  console.log('─'.repeat(80));
+  console.log(`   Problem Categories:  ${a.tags?.problemCategory?.join(', ') || 'N/A'}`);
+  console.log(`   Product Areas:       ${a.tags?.productArea?.join(', ') || 'N/A'}`);
+  console.log(`   Complexity:          ${a.tags?.technicalComplexity || 'N/A'}`);
+  console.log(`   Issue Type:          ${a.tags?.issueType || 'N/A'}`);
+  console.log(`   Resolution Type:     ${a.tags?.resolutionType || 'N/A'}`);
+  console.log(`   Fault Attribution:   ${a.tags?.faultAttribution || 'N/A'}`);
 
   // Quality Scores
-  console.log('\n⭐ QUALITY ASSESSMENT');
+  console.log('\n⭐ QUALITY SCORES');
   console.log('─'.repeat(80));
   const qa = a.qualityAssessment || {};
-  console.log(`   Resolution Quality:    ${qa.resolutionQuality?.score || 'N/A'}/10 - ${qa.resolutionQuality?.reasoning || ''}`);
-  console.log(`   Response Timeliness:   ${qa.responseTimeliness?.score || 'N/A'}/10 - ${qa.responseTimeliness?.reasoning || ''}`);
-  console.log(`   Communication Quality: ${qa.communicationQuality?.score || 'N/A'}/10 - ${qa.communicationQuality?.reasoning || ''}`);
-  console.log(`   Technical Accuracy:    ${qa.technicalAccuracy?.score || 'N/A'}/10 - ${qa.technicalAccuracy?.reasoning || ''}`);
-  console.log(`   Overall Handling:      ${qa.overallHandling?.score || 'N/A'}/10 - ${qa.overallHandling?.reasoning || ''}`);
+  console.log(`   Resolution Quality:    ${qa.resolutionQuality?.score || 'N/A'}/10`);
+  console.log(`   Response Timeliness:   ${qa.responseTimeliness?.score || 'N/A'}/10`);
+  console.log(`   Communication Quality: ${qa.communicationQuality?.score || 'N/A'}/10`);
+  console.log(`   Technical Accuracy:    ${qa.technicalAccuracy?.score || 'N/A'}/10`);
+  console.log(`   Overall Handling:      ${qa.overallHandling?.score || 'N/A'}/10`);
 
   // Sentiment
-  console.log('\n💭 SENTIMENT ANALYSIS');
+  console.log('\n💭 SENTIMENT');
   console.log('─'.repeat(80));
   const cs = a.sentimentAnalysis?.customerSentiment || {};
   const ss = a.sentimentAnalysis?.supportSentiment || {};
-  console.log(`   Customer Sentiment: ${cs.overall || 'N/A'} (Trajectory: ${cs.trajectory || 'N/A'})`);
-  console.log(`   Frustration Level: ${cs.frustrationLevel || 'N/A'}`);
-  console.log(`   Support Tone: ${ss.tone || 'N/A'}, Empathy: ${ss.empathy || 'N/A'}, Proactiveness: ${ss.proactiveness || 'N/A'}`);
-
-  // Experience Insights
-  console.log('\n💡 EXPERIENCE INSIGHTS');
-  console.log('─'.repeat(80));
-  const exp = a.experienceInsights || {};
-  console.log(`   Positive Aspects: ${exp.positiveAspects?.join('; ') || 'N/A'}`);
-  console.log(`   Improvement Areas: ${exp.improvementAreas?.join('; ') || 'N/A'}`);
-  console.log(`   Resolution Effective: ${exp.wasResolutionEffective ?? 'N/A'}`);
-  console.log(`   Customer Effort: ${exp.customerEffortLevel || 'N/A'}`);
-  console.log(`   Time to Resolution: ${exp.timeToResolutionAssessment || 'N/A'}`);
+  console.log(`   Customer: ${cs.overall || 'N/A'} | Frustration: ${cs.frustrationLevel || 'N/A'} | Trajectory: ${cs.trajectory || 'N/A'}`);
+  console.log(`   Support:  Tone: ${ss.tone || 'N/A'} | Empathy: ${ss.empathy || 'N/A'} | Proactive: ${ss.proactiveness || 'N/A'}`);
 
   // Clustering Features
   console.log('\n🔗 CLUSTERING FEATURES');
   console.log('─'.repeat(80));
   const cf = a.clusteringFeatures || {};
-  console.log(`   Primary Topic: ${cf.primaryTopic || 'N/A'}`);
-  console.log(`   Secondary Topics: ${cf.secondaryTopics?.join(', ') || 'N/A'}`);
-  console.log(`   Keywords: ${cf.keywords?.join(', ') || 'N/A'}`);
+  console.log(`   Primary Topic:       ${cf.primaryTopic || 'N/A'}`);
+  console.log(`   Secondary Topics:    ${cf.secondaryTopics?.join(', ') || 'N/A'}`);
+  console.log(`   Keywords:            ${cf.keywords?.join(', ') || 'N/A'}`);
 
   // Actionable Insights
   console.log('\n🎯 ACTIONABLE INSIGHTS');
   console.log('─'.repeat(80));
   const ai = a.actionableInsights || {};
   if (ai.knowledgeBaseGaps?.length > 0) {
-    console.log(`   KB Gaps: ${ai.knowledgeBaseGaps.join('; ')}`);
+    console.log(`   KB Gaps:             ${ai.knowledgeBaseGaps.join('; ')}`);
   }
   if (ai.processImprovements?.length > 0) {
     console.log(`   Process Improvements: ${ai.processImprovements.join('; ')}`);
   }
-  if (ai.trainingOpportunities?.length > 0) {
-    console.log(`   Training Opportunities: ${ai.trainingOpportunities.join('; ')}`);
+  if (ai.preventionRecommendations?.length > 0) {
+    console.log(`   Prevention:          ${ai.preventionRecommendations.join('; ')}`);
   }
 
   // Metadata
   console.log('\n📊 ANALYSIS METADATA');
   console.log('─'.repeat(80));
-  console.log(`   Confidence Score: ${a.metadata?.confidenceScore || 'N/A'}`);
-  console.log(`   Analysis Timestamp: ${result.analysisTimestamp}`);
-  console.log(`   Conversation Messages: ${result.inputSummary.conversationLength}`);
-  console.log(`   Had Escalation: ${result.inputSummary.hadEscalation}`);
+  console.log(`   Confidence Score:    ${a.metadata?.confidenceScore || 'N/A'}`);
+  console.log(`   Requires Human Review: ${a.metadata?.requiresHumanReview ?? 'N/A'}`);
+  if (a.metadata?.reviewReasons?.length > 0) {
+    console.log(`   Review Reasons:      ${a.metadata.reviewReasons.join('; ')}`);
+  }
+  console.log(`   Analysis Timestamp:  ${result.analysisTimestamp}`);
 
   console.log('\n' + '═'.repeat(80));
   console.log('\n📄 Full analysis saved to JSON file\n');

@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { FlexLayout, FlexItem } from '@nutanix-ui/prism-reactjs';
+import { FlexLayout, FlexItem, StackingLayout } from '@nutanix-ui/prism-reactjs';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import './MainLayout.css';
@@ -18,25 +18,21 @@ function MainLayout() {
   const shouldShowSidebar = layoutConfig.showSidebar && isDashboardRoute;
 
   return (
-    <div className="main-layout">
+    <StackingLayout itemSpacing="0px" style={{ minHeight: '100vh' }}>
       {/* Header - fixed at top */}
       {layoutConfig.showHeader && <Header />}
       
       {/* Main Content Area */}
-      <div className="content-area">
+      <FlexLayout itemSpacing="0px" style={{ flex: 1, overflow: 'hidden' }}>
         {/* Sidebar - shown only on dashboard routes */}
-        {shouldShowSidebar && (
-          <div className="sidebar-container">
-            <Sidebar />
-          </div>
-        )}
+        {shouldShowSidebar && <Sidebar />}
         
         {/* Page Content */}
-        <div className="page-content">
+        <FlexItem flexGrow="1" className="page-content">
           <Outlet />
-        </div>
-      </div>
-    </div>
+        </FlexItem>
+      </FlexLayout>
+    </StackingLayout>
   );
 }
 

@@ -53,11 +53,11 @@ function UploadData() {
 
     try {
       const result = await dispatch(uploadReport(selectedFile)).unwrap();
-      navigate(`/dashboard/${result.id}/action-center`);
+      navigate(`/dashboard/${result.id}`);
     } catch (err) {
       console.error('Upload failed:', err);
       // For demo purposes, navigate anyway with a mock ID
-      navigate('/dashboard/demo-report-1/action-center');
+      navigate('/dashboard/demo-report-1');
     }
   };
 

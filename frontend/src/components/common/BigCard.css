@@ -1,0 +1,36 @@
+.big-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  flex: 1;
+  min-width: 300px;
+}
+
+.big-card-header {
+  margin-bottom: 16px;
+}
+
+.big-card-link {
+  color: #22a5f7;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.big-card-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .big-card {
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 900px) {
+  .big-card {
+    min-width: 100%;
+  }
+}

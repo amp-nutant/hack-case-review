@@ -1,4 +1,21 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { invokeLLMAPI } from './llm.service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load predefined tag lists
+let TAG_LISTS = { openTags: [], closeTags: [] };
+try {
+  const tagsPath = path.join(__dirname, '../data/tags.json');
+  const tagsData = fs.readFileSync(tagsPath, 'utf-8');
+  TAG_LISTS = JSON.parse(tagsData);
+  console.log(`📋 Loaded ${TAG_LISTS.openTags?.length || 0} open tags and ${TAG_LISTS.closeTags?.length || 0} close tags for validation`);
+} catch (error) {
+  console.warn('Warning: Could not load tags.json for LLM context');
+}
 
 /**
  * Analyze a case using LLM to extract insights, tags, and summaries
@@ -9,32 +26,178 @@ export const analyzeCase = async (caseData) => {
   // Prepare a condensed version of case data for LLM context
   const caseContext = prepareCaseContext(caseData);
   
-  const systemPrompt = `You are an expert support case analyst. Your task is to analyze support cases and provide structured insights.
+  // Build the system prompt with tag lists
+  const systemPrompt = buildSystemPrompt();
+  
+  // Build user prompt with case data
+  const userPrompt = buildUserPrompt(caseContext);
 
-You will receive a JSON object containing case details including:
-- Case information (subject, description, status, priority)
-- Customer information
-- Resolution notes
-- Escalation details
-- Response metrics
-- Full conversation timeline
+  try {
+    const response = await invokeLLMAPI({
+      systemPrompt,
+      userPrompt,
+      maxTokens: 4096,
+      temperature: 0.3, // Lower temperature for more consistent structured output
+    });
 
-Analyze the case thoroughly and return a JSON object with the following structure:
+    // Parse the LLM response
+    const analysisText = response.content || response.text;
+    const analysis = parseJSONResponse(analysisText);
+
+    return {
+      caseNumber: caseData.caseInfo.caseNumber,
+      analysisTimestamp: new Date().toISOString(),
+      analysis,
+      inputSummary: {
+        conversationLength: caseData.conversation?.length || 0,
+        totalEvents: caseData.timeline?.totalEvents || 0,
+        hadEscalation: caseData.escalation?.isEscalated || false,
+        avgResponseTime: caseData.responseMetrics?.avgResponseTimeHours,
+      },
+    };
+  } catch (error) {
+    console.error('LLM analysis failed:', error.message);
+    throw new Error(`Case analysis failed: ${error.message}`);
+  }
+};
+
+/**
+ * Build the system prompt with predefined tag lists
+ */
+function buildSystemPrompt() {
+  return `You are an expert support case analyst for Nutanix technical support. Your task is to analyze support cases and provide structured insights.
+
+You will receive:
+1. Case details (subject, description, status, priority, resolution, conversation, etc.)
+2. EXISTING TAGS that were applied to the case (openTags and closeTags)
+3. PREDEFINED TAG LISTS - the official valid tags that should be used
+
+YOUR TAG VALIDATION TASK:
+1. Thoroughly understand the problem described in the case
+2. Review the PREDEFINED OPEN TAGS list and select which tags should apply to this case
+3. Compare your selected tags with the EXISTING openTags - score and explain
+4. Review the PREDEFINED CLOSE TAGS list and select which tags should apply based on the resolution
+5. Compare your selected tags with the EXISTING closeTags - score and explain
+
+IMPORTANT FOR TAG VALIDATION:
+- Only recommend tags that exist in the PREDEFINED lists
+- Explain WHY each tag should or should not apply based on case content
+- Be specific about what in the case supports or contradicts each tag
+
+Return a JSON object with the following structure:
 
 {
   "issueSummary": {
     "brief": "One-line summary of the issue",
     "detailed": "2-3 paragraph detailed summary of what happened",
-    "rootCause": "Identified root cause if determinable",
-    "technicalArea": "Primary technical area (e.g., Storage, Networking, Virtualization, etc.)"
+    "rootCause": "Identified root cause if determinable, or 'Unable to determine' if not clear",
+    "technicalArea": "Primary technical area (e.g., Storage, Networking, Virtualization, Backup/DR, Prism, AOS Core, etc.)"
+  },
+  
+  "tagValidation": {
+    "openTags": {
+      "appliedTags": ["list the openTags that were applied to the case"],
+      "recommendedTags": ["tags from PREDEFINED OPEN TAGS list that SHOULD apply based on the problem"],
+      "correctlyApplied": ["tags that were applied AND should have been applied"],
+      "incorrectlyApplied": ["tags that were applied but should NOT have been - with reason"],
+      "missingTags": ["tags that should have been applied but weren't - with reason"],
+      "score": 1-10,
+      "explanation": "Detailed explanation of why this score, referencing specific case content"
+    },
+    "closeTags": {
+      "appliedTags": ["list the closeTags that were applied to the case"],
+      "recommendedTags": ["tags from PREDEFINED CLOSE TAGS list that SHOULD apply based on resolution"],
+      "correctlyApplied": ["tags that were applied AND should have been applied"],
+      "incorrectlyApplied": ["tags that were applied but should NOT have been - with reason"],
+      "missingTags": ["tags that should have been applied but weren't - with reason"],
+      "score": 1-10,
+      "explanation": "Detailed explanation of why this score, referencing resolution content"
+    },
+    "overallScore": 1-10,
+    "overallExplanation": "Summary of tag accuracy across open and close tags"
+  },
+  
+  "issueClassification": {
+    "isBug": {
+      "verdict": true|false|"Unable to determine",
+      "confidence": "High|Medium|Low",
+      "evidence": "Specific evidence from case supporting this conclusion",
+      "bugType": "Software Bug|Hardware Defect|Firmware Issue|null if not a bug"
+    },
+    "isConfigurationIssue": {
+      "verdict": true|false|"Unable to determine",
+      "confidence": "High|Medium|Low",
+      "evidence": "Evidence that this was resolved via configuration",
+      "configurationType": "Cluster Config|Network Config|VM Config|Storage Config|null"
+    },
+    "isCustomerError": {
+      "verdict": true|false|"Unable to determine",
+      "confidence": "High|Medium|Low",
+      "evidence": "Evidence that customer made a mistake/error",
+      "errorType": "Workflow Error|Misconfiguration|Operational Mistake|Misunderstanding|null",
+      "description": "What the customer did wrong, if applicable"
+    },
+    "isNonNutanixIssue": {
+      "verdict": true|false|"Unable to determine",
+      "confidence": "High|Medium|Low",
+      "evidence": "Evidence that issue was NOT with Nutanix products",
+      "actualSource": "Third-party Software|Customer Infrastructure|Network|Hypervisor|Hardware (non-Nutanix)|null",
+      "description": "What the actual issue source was"
+    }
+  },
+  
+  "resolutionAnalysis": {
+    "resolutionMethod": "Bug Fix|Configuration Change|Workaround|Upgrade|Documentation|Customer Education|No Action Needed|Unresolved",
+    "resolvedBy": {
+      "who": "Support|Customer Self-Resolved|Engineering|Third Party|Auto-Resolved|Unknown",
+      "confidence": "High|Medium|Low",
+      "evidence": "Evidence of who resolved it"
+    },
+    "wasSelfResolved": {
+      "verdict": true|false|"Unable to determine",
+      "evidence": "Evidence that customer resolved it themselves or issue resolved on its own"
+    },
+    "supportContribution": {
+      "level": "Critical|Significant|Moderate|Minimal|None",
+      "description": "How much support contributed to the resolution"
+    },
+    "resolutionQuality": {
+      "score": 1-10,
+      "isPermanentFix": true|false|"Unable to determine",
+      "isWorkaround": true|false,
+      "willRecur": "Likely|Possible|Unlikely|No",
+      "reasoning": "Why this resolution quality score"
+    }
+  },
+  
+  "rcaAssessment": {
+    "rcaPerformed": true|false|"Partial",
+    "rcaQuality": {
+      "score": 1-10,
+      "verdict": "Comprehensive|Adequate|Incomplete|Missing|Not Applicable",
+      "reasoning": "Assessment of RCA quality"
+    },
+    "rcaConclusive": {
+      "verdict": true|false|"Unable to determine",
+      "evidence": "What RCA concluded or why it was inconclusive"
+    },
+    "rcaActionable": {
+      "verdict": true|false,
+      "actionsIdentified": ["List of actions identified from RCA"],
+      "actionsImplemented": ["Actions that were actually implemented"],
+      "missingActions": ["Actions that should have been taken but weren't"]
+    },
+    "rcaGaps": ["What was missing from the RCA"],
+    "rcaRecommendations": ["Recommendations for better RCA in similar cases"]
   },
   
   "tags": {
     "problemCategory": ["array of problem categories"],
     "productArea": ["array of product areas involved"],
     "technicalComplexity": "Low|Medium|High|Critical",
-    "issueType": "Bug|Configuration|User Error|Documentation Gap|Feature Request|Hardware|Unknown",
-    "resolutionType": "Workaround|Permanent Fix|Configuration Change|Upgrade Required|No Action Needed|Unresolved"
+    "issueType": "Bug|Configuration|User Error|Documentation Gap|Feature Request|Hardware|Third Party|Unknown",
+    "resolutionType": "Bug Fix|Workaround|Permanent Fix|Configuration Change|Upgrade Required|Customer Education|No Action Needed|Self-Resolved|Unresolved",
+    "faultAttribution": "Nutanix Software|Nutanix Hardware|Customer Error|Third Party|Environment|Unknown"
   },
   
   "qualityAssessment": {
@@ -95,55 +258,50 @@ Analyze the case thoroughly and return a JSON object with the following structur
     "knowledgeBaseGaps": ["KB articles that should exist or be improved"],
     "processImprovements": ["Suggested process improvements"],
     "trainingOpportunities": ["Skills or knowledge gaps identified"],
-    "automationOpportunities": ["Could this be automated?"]
+    "automationOpportunities": ["Could this be automated?"],
+    "preventionRecommendations": ["How similar issues could be prevented"]
   },
   
   "metadata": {
     "confidenceScore": 0.0-1.0,
     "analysisLimitations": ["Any limitations in the analysis"],
-    "dataQualityIssues": ["Any data quality issues noticed"]
+    "dataQualityIssues": ["Any data quality issues noticed"],
+    "requiresHumanReview": true|false,
+    "reviewReasons": ["Why human review is needed, if applicable"]
   }
 }
 
-IMPORTANT:
+IMPORTANT GUIDELINES:
 - Be objective and evidence-based in your assessments
 - If information is missing, indicate "Unable to determine" or null
 - Provide specific examples from the conversation when possible
 - Consider the full context including escalation status and response times
+- For TAG VALIDATION: You MUST select tags ONLY from the PREDEFINED lists provided
+- Explain WHY each tag matches or doesn't match based on specific case content
+- For bug vs configuration, look for evidence in resolution notes and conversation
+- For customer error, look for signs that customer misconfigured or misused something
+- For non-Nutanix issues, identify when the problem was with third-party software, customer network, etc.
+- For RCA assessment, evaluate if the root cause was properly identified and if actions were taken
 - Return ONLY valid JSON, no additional text`;
+}
 
-  const userPrompt = `Analyze this support case and provide structured insights:
+/**
+ * Build the user prompt with case data and predefined tag lists
+ */
+function buildUserPrompt(caseContext) {
+  return `Analyze this support case and provide structured insights.
 
-${JSON.stringify(caseContext, null, 2)}`;
+=== PREDEFINED OPEN TAGS (select from this list only) ===
+${JSON.stringify(TAG_LISTS.openTags || [], null, 2)}
 
-  try {
-    const response = await invokeLLMAPI({
-      systemPrompt,
-      userPrompt,
-      maxTokens: 4096,
-      temperature: 0.3, // Lower temperature for more consistent structured output
-    });
+=== PREDEFINED CLOSE TAGS (select from this list only) ===
+${JSON.stringify(TAG_LISTS.closeTags || [], null, 2)}
 
-    // Parse the LLM response
-    const analysisText = response.content || response.text;
-    const analysis = parseJSONResponse(analysisText);
+=== CASE DATA ===
+${JSON.stringify(caseContext, null, 2)}
 
-    return {
-      caseNumber: caseData.caseInfo.caseNumber,
-      analysisTimestamp: new Date().toISOString(),
-      analysis,
-      inputSummary: {
-        conversationLength: caseData.conversation?.length || 0,
-        totalEvents: caseData.timeline?.totalEvents || 0,
-        hadEscalation: caseData.escalation?.isEscalated || false,
-        avgResponseTime: caseData.responseMetrics?.avgResponseTimeHours,
-      },
-    };
-  } catch (error) {
-    console.error('LLM analysis failed:', error.message);
-    throw new Error(`Case analysis failed: ${error.message}`);
-  }
-};
+Remember: For tag validation, you MUST recommend tags ONLY from the predefined lists above. Explain why each tag applies or doesn't apply based on the case content.`;
+}
 
 /**
  * Prepare condensed case context for LLM (to fit within token limits)
@@ -308,6 +466,34 @@ export const extractClusteringFeatures = (analyzedCases) => {
       issueType: ac.analysis.tags?.issueType,
       complexity: ac.analysis.tags?.technicalComplexity,
       resolutionType: ac.analysis.tags?.resolutionType,
+      faultAttribution: ac.analysis.tags?.faultAttribution,
+      
+      // Issue Classification
+      isBug: ac.analysis.issueClassification?.isBug?.verdict,
+      isConfigurationIssue: ac.analysis.issueClassification?.isConfigurationIssue?.verdict,
+      isCustomerError: ac.analysis.issueClassification?.isCustomerError?.verdict,
+      isNonNutanixIssue: ac.analysis.issueClassification?.isNonNutanixIssue?.verdict,
+      customerErrorType: ac.analysis.issueClassification?.isCustomerError?.errorType,
+      nonNutanixSource: ac.analysis.issueClassification?.isNonNutanixIssue?.actualSource,
+      
+      // Resolution Analysis
+      resolutionMethod: ac.analysis.resolutionAnalysis?.resolutionMethod,
+      resolvedBy: ac.analysis.resolutionAnalysis?.resolvedBy?.who,
+      wasSelfResolved: ac.analysis.resolutionAnalysis?.wasSelfResolved?.verdict,
+      supportContribution: ac.analysis.resolutionAnalysis?.supportContribution?.level,
+      isPermanentFix: ac.analysis.resolutionAnalysis?.resolutionQuality?.isPermanentFix,
+      isWorkaround: ac.analysis.resolutionAnalysis?.resolutionQuality?.isWorkaround,
+      
+      // RCA Assessment
+      rcaPerformed: ac.analysis.rcaAssessment?.rcaPerformed,
+      rcaQualityScore: ac.analysis.rcaAssessment?.rcaQuality?.score,
+      rcaConclusive: ac.analysis.rcaAssessment?.rcaConclusive?.verdict,
+      rcaActionable: ac.analysis.rcaAssessment?.rcaActionable?.verdict,
+      
+      // Tag Validation
+      openTagsAccuracyScore: ac.analysis.tagValidation?.openTagsAccuracy?.score,
+      closeTagsAccuracyScore: ac.analysis.tagValidation?.closeTagsAccuracy?.score,
+      overallTagMatchScore: ac.analysis.tagValidation?.overallTagMatchScore,
       
       // Sentiment features
       customerSentiment: ac.analysis.sentimentAnalysis?.customerSentiment?.overall,
