@@ -67,12 +67,12 @@ function ActionCard({
     in_progress: { label: 'In progress', color: 'blue' },
   };
 
-  // Border color based on rank (1-2 = red, 3-4 = orange, 5-6 = yellow, 7+ = green)
-  const getBorderColor = (rank) => {
-    if (rank <= 2) return '#ef4444';
-    if (rank <= 4) return '#f97316';
-    if (rank <= 6) return '#eab308';
-    return '#22c55e';
+  // Softer colors based on rank (1-2 = coral, 3-4 = orange, 5-8 = amber, 9+ = teal)
+  const getRankColor = (rank) => {
+    if (rank <= 2) return '#e67e5a'; // coral/salmon
+    if (rank <= 4) return '#f59e42'; // soft orange  
+    if (rank <= 8) return '#eab308'; // amber
+    return '#34a88f'; // teal
   };
 
   const actionConfig = actionTypeConfig[actionType] || { label: actionType?.toUpperCase(), color: 'gray', icon: ReportIcon };
@@ -82,7 +82,7 @@ function ActionCard({
   return (
     <FlexLayout
       className="action-card"
-      style={{ borderLeftColor: getBorderColor(rank), padding: '12px' }}
+      style={{ borderLeftColor: getRankColor(rank), padding: '10px' }}
       alignItems="flex-start"
       itemGap="L"
     >
@@ -91,7 +91,7 @@ function ActionCard({
         className="action-card-rank"
         alignItems="center"
         justifyContent="center"
-        style={{ backgroundColor: getBorderColor(rank) }}
+        style={{ backgroundColor: getRankColor(rank) }}
       >
         {rank}
       </FlexLayout>
@@ -103,7 +103,7 @@ function ActionCard({
           <Badge color={actionConfig.color} count={actionConfig.label} />
           <Badge color="gray" count={component} />
           <FlexLayout alignItems="center" itemGap="XS">
-            <span className="status-dot" style={{ backgroundColor: statusInfo.color === 'green' ? '#22c55e' : '#3b82f6' }} />
+            <Badge color={statusInfo.color} label={statusInfo.label} />
             <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ color: statusInfo.color === 'green' ? '#22c55e' : '#3b82f6' }}>
               {statusInfo.label}
             </TextLabel>
@@ -119,18 +119,18 @@ function ActionCard({
         </TextLabel>
 
         {/* Metadata Row */}
-        <FlexLayout alignItems="center" itemGap="L" style={{ marginTop: '4px' }}>
+        <FlexLayout alignItems="center" itemGap="L" style={{ marginTop: '4px', color: '#627386', fontSize: '13px' }}>
           <FlexLayout alignItems="center" itemGap="XS">
-            <OpenFolderIcon/>
-              {casesAffected} cases affected
+            <OpenFolderIcon size="small" />
+            <span>{casesAffected} cases affected</span>
           </FlexLayout>
           <FlexLayout alignItems="center" itemGap="XS">
-            <LayersIcon />
-              Similarity: {patternMatch}%
+            <LayersIcon size="small" />
+            <span>Similarity: {patternMatch}%</span>
           </FlexLayout>
           <FlexLayout alignItems="center" itemGap="XS">
-            Version:
-            <Badge color="blue" count={version} />
+            <span>Version:</span>
+            <Badge color="gray" count={version} />
           </FlexLayout>
         </FlexLayout>
       </FlexLayout>

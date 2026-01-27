@@ -5,7 +5,6 @@ import {
   Title,
   TextLabel,
   Button,
-  Alert,
   AIIcon,
   Select,
   Badge,
@@ -23,9 +22,19 @@ function ActionCenter() {
   const [selectedComponent, setSelectedComponent] = useState({ key: 'all', label: 'All Components' });
   const [selectedCriticality, setSelectedCriticality] = useState('all');
 
-  // Filter the actions based on all criteria
+  // Filter and rank the actions based on all criteria
   const filteredActions = useMemo(() => {
-    return data.actions.filter((action) => {
+    // First sort all actions by casesAffected (descending) to determine ranks
+    const sortedActions = [...data.actions].sort((a, b) => b.casesAffected - a.casesAffected);
+    
+    // Assign ranks based on sorted order
+    const rankedActions = sortedActions.map((action, index) => ({
+      ...action,
+      rank: index + 1,
+    }));
+
+    // Now filter
+    return rankedActions.filter((action) => {
       // Action type filter
       if (selectedActionType.key !== 'all' && action.actionType !== selectedActionType.key) {
         return false;
@@ -46,7 +55,7 @@ function ActionCenter() {
       }
 
       return true;
-    }).sort((a, b) => a.rank - b.rank);
+    });
   }, [selectedActionType, selectedComponent, selectedCriticality, data.actions, data.criticalities]);
 
   // Calculate summary based on filtered actions
@@ -92,15 +101,15 @@ function ActionCenter() {
   return (
     <FlexLayout flexDirection="column" itemGap="L" style={{ padding: '24px' }}>
       {/* Page Header */}
-      <FlexLayout justifyContent="space-between" alignItems="flex-start">
-        <FlexLayout flexDirection="column" itemGap="XS">
+      <FlexLayout justifyContent="space-between" alignItems="center">
+        <FlexLayout alignItems="center" itemGap="L">
           <Title size="h2">Action Center</Title>
-          <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>
-            Showing {filteredSummary.total} of {data.actions.length} actions • 
-            {filteredSummary.critical > 0 && ` ${filteredSummary.critical} critical •`}
-            {filteredSummary.high > 0 && ` ${filteredSummary.high} high •`}
-            {filteredSummary.medium > 0 && ` ${filteredSummary.medium} medium`}
-          </TextLabel>
+          <FlexLayout alignItems="center" itemGap="S">
+            <Badge color="gray" count={`${filteredSummary.total} total`} />
+            {filteredSummary.critical > 0 && <Badge color="red" count={`${filteredSummary.critical} critical`} />}
+            {filteredSummary.high > 0 && <Badge color="orange" count={`${filteredSummary.high} high`} />}
+            {filteredSummary.medium > 0 && <Badge color="yellow" count={`${filteredSummary.medium} medium`} />}
+          </FlexLayout>
         </FlexLayout>
         {hasActiveFilters && (
           <Button type={Button.ButtonTypes.BORDERLESS} onClick={clearFilters}>
@@ -142,22 +151,28 @@ function ActionCenter() {
         </FlexLayout>
       </FlexLayout>
 
-      {/* AI Insight Alert */}
-      <Alert
-        type={Alert.AlertTypes.INFO}
-        message={
-          <FlexLayout justifyContent="space-between" alignItems="center" style={{ width: '100%' }}>
-            <FlexLayout alignItems="center" itemGap="S">
-              <AIIcon />
-              <TextLabel>{data.aiInsight.message}</TextLabel>
-            </FlexLayout>
-            <FlexLayout itemGap="S">
-              <Button type={Button.ButtonTypes.PRIMARY}>Export Report</Button>
-              <Button type={Button.ButtonTypes.SECONDARY}>Schedule Review Meeting</Button>
-            </FlexLayout>
-          </FlexLayout>
-        }
-      />
+      {/* AI Insight Banner */}
+      <FlexLayout
+        justifyContent="space-between"
+        alignItems="center"
+        style={{
+          background: 'linear-gradient(90deg, #e9f6fe 0%, #f0f9ff 100%)',
+          border: '1px solid #bde4fd',
+          borderRadius: '8px',
+          padding: '16px 20px',
+        }}
+      >
+        <FlexLayout alignItems="center" itemGap="S">
+          <AIIcon color="#1b6dc6" />
+          <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>
+            {data.aiInsight.message}
+          </TextLabel>
+        </FlexLayout>
+        <FlexLayout itemGap="S">
+          <Button type={Button.ButtonTypes.PRIMARY}>Export Report</Button>
+          <Button type={Button.ButtonTypes.SECONDARY}>Schedule Review</Button>
+        </FlexLayout>
+      </FlexLayout>
 
       {/* Action Cards */}
       <FlexLayout flexDirection="column" itemGap="M">

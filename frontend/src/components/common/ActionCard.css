@@ -1,23 +1,28 @@
 .action-card {
   background: #fff;
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid;
-  border-radius: 8px;
-  padding: 20px;
+  border: 1px solid #edf0f2;
+  border-left: 3px solid;
+  border-radius: 6px;
+  padding: 16px 20px;
+  transition: box-shadow 0.2s ease;
+}
+
+.action-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .action-card-rank {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   border-radius: 50%;
   color: #fff;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
 }
