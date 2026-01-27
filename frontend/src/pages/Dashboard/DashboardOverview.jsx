@@ -1,13 +1,13 @@
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
-  Title,
   TextLabel,
   Badge,
-  Button,
-  Link,
   Progress,
   FlexLayout,
   OrderedList,
+  Alert,
+  AIIcon,
+  Button,
 } from '@nutanix-ui/prism-reactjs';
 import { MiniCard, BigCard } from '../../components/common';
 import { mockDashboardData } from '../../data/mockDashboard';
@@ -20,6 +20,23 @@ function DashboardOverview() {
 
   return (
     <FlexLayout flexDirection="column" itemGap='L' style={{ padding: '12px' }} flexWrap='wrap'>
+
+      {/* AI Insight Alert */}
+      <Alert
+        type={Alert.AlertTypes.INFO}
+        message={
+          <FlexLayout justifyContent="space-between" alignItems="center" itemGap="S" style={{ padding: '5px' }}>
+            <FlexLayout flexDirection="column" alignItems="center" itemGap="S">
+              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ lineHeight: '1.2' }}>
+                {data.aiInsight.description}
+              </TextLabel>
+            </FlexLayout>
+            <Button style={{ width: '150px' }} onClick={() => navigate(`/dashboard/${reportId}/chat`)}>
+              <AIIcon /> Ask AI
+            </Button>
+          </FlexLayout>
+        }
+      />
       {/* Metrics Row */}
       <FlexLayout itemGap="S" flexWrap="wrap">
         <MiniCard title="Total Cases" count={data.totalCases} />
@@ -68,13 +85,11 @@ function DashboardOverview() {
               <FlexLayout alignItems="center" itemGap="M">
                 <Badge
                   color={action.priority === 'critical' ? 'red' : 'orange'}
-                  label={action.priority.toUpperCase()}
+                  count={action.priority.toUpperCase()}
                 />
                 <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{action.title}</TextLabel>
               </FlexLayout>
-              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>
-                {action.count || Math.floor(Math.random() * 10) + 5}
-              </TextLabel>
+              <Badge color="gray" count={`${action.affectedCases} cases`} />
             </FlexLayout>
           ))}
         </BigCard>
@@ -89,19 +104,24 @@ function DashboardOverview() {
           <FlexLayout itemGap="S" style={{ marginBottom: '16px' }}>
             <MiniCard title="KB Missing" count={data.kbJiraIssues.kbMissing} countColor="#ef4444" />
             <MiniCard title="KB Outdated" count={data.kbJiraIssues.kbOutdated} countColor="#f97316" />
-            <MiniCard title="JIRA Open" count={data.kbJiraIssues.jiraOpen} countColor="#22a5f7" />
+            <MiniCard title="JIRA Open" count={data.kbJiraIssues.jiraOpen} countColor="#8b5cf6" />
           </FlexLayout>
 
-          {/* Top Issues Section */}
+          {/* Most Frequent Section */}
           <FlexLayout flexDirection="column" itemGap="S">
-            <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>Top Issues</TextLabel>
+            <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>Most Frequent</TextLabel>
             {data.kbJiraIssues.topKBGaps.map((gap, idx) => (
-              <FlexLayout key={idx} alignItems="center" itemGap="M">
-                <Badge
-                  color={gap.status === 'No Article' ? 'yellow' : 'blue'}
-                  count={gap.status === 'No Article' ? 'KB' : 'JIRA'}
-                />
-                <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{gap.title}</TextLabel>
+              <FlexLayout key={idx} justifyContent="space-between" alignItems="center" style={{ width: '100%' }}>
+                <FlexLayout alignItems="center" itemGap="M">
+                  <Badge
+                    color={gap.status === 'No Article' ? 'yellow' : 'green'}
+                    count={gap.status === 'No Article' ? 'KB' : 'JIRA'}
+                  />
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>
+                    {gap.id}: {gap.title}
+                  </TextLabel>
+                </FlexLayout>
+                <Badge color="gray" count={`${gap.caseCount} cases (${gap.percentage}%)`} />
               </FlexLayout>
             ))}
           </FlexLayout>
@@ -114,19 +134,18 @@ function DashboardOverview() {
           linkRoute={`/dashboard/${reportId}/graphs`}
         >
           {data.components.topComponents.map((comp, idx) => {
-            // Assign different colors based on index
-            const statusColors = [
-              Progress.ProgressStatus.ACTIVE,    // Blue
-              Progress.ProgressStatus.ACTIVE,    // Blue
-              Progress.ProgressStatus.DANGER,    // Red
-              Progress.ProgressStatus.SUCCESS,   // Green
-            ];
+            // Color based on percentage: high = danger (red), medium = warning, low = success (green)
+            const getStatusByPercentage = (percent) => {
+              if (percent >= 25) return Progress.ProgressStatus.DANGER;
+              if (percent >= 20) return Progress.ProgressStatus.WARNING;
+              return Progress.ProgressStatus.SUCCESS;
+            };
             return (
               <Progress
                 key={idx}
                 labelPosition="top"
                 percent={comp.percentage}
-                status={statusColors[idx] || Progress.ProgressStatus.ACTIVE}
+                status={getStatusByPercentage(comp.percentage)}
                 label={
                   <FlexLayout justifyContent="space-between" alignItems="center">
                     <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{comp.name}</TextLabel>
@@ -139,19 +158,7 @@ function DashboardOverview() {
         </BigCard>
       </div>
 
-      {/* AI Banner */}
-      <div className="ai-banner">
-        <div className="ai-content">
-          <span className="ai-icon">🤖</span>
-          <div className="ai-text">
-            <TextLabel className="ai-title">AI Analysis Complete</TextLabel>
-            <TextLabel className="ai-desc">
-              35% of cases relate to storage operations after AOS 6.5 upgrade. Pattern suggests documentation gap in migration procedures.
-            </TextLabel>
-          </div>
-        </div>
-        <Button onClick={() => navigate(`/dashboard/${reportId}/chat`)}>Ask AI Questions</Button>
-      </div>
+      
     </FlexLayout>
   );
 }
