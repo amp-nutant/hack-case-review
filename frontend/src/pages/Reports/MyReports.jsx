@@ -1,126 +1,156 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   FlexLayout,
   FlexItem,
-  Title,
-  TextLabel,
   Button,
-  Table,
   Loader,
   StackingLayout,
-  Badge,
   DashboardWidgetLayout,
   DashboardWidgetHeader,
 } from '@nutanix-ui/prism-reactjs';
+import { Card, Descriptions, Dropdown } from 'antd';
+import { MoreOutlined, CalendarOutlined } from '@ant-design/icons';
 import { fetchReports, deleteReport } from '../../redux/slices/reportsSlice';
 import { mockReports } from '../../data/mockReports';
 import styles from './MyReports.module.css';
 
-function MyReports() {
+const ReportCard = ({ report, onDelete }) => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { items, loading, error } = useSelector((state) => state.reports);
-
-  useEffect(() => {
-    dispatch(fetchReports());
-  }, [dispatch]);
-
-  // Use mock data for demo if no items loaded
-  const reports = items.length > 0 ? items : mockReports;
-
-  const handleViewReport = (reportId) => {
-    navigate(`/dashboard/${reportId}`);
-  };
-
-  const handleDeleteReport = (reportId, e) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this report?')) {
-      dispatch(deleteReport(reportId));
-    }
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   };
 
-  const getStatusBadge = (status) => {
-    const colorMap = {
-      completed: 'green',
-      processing: 'yellow',
-      failed: 'red',
-      pending: 'gray',
-    };
-    return (
-      <Badge
-        color={colorMap[status] || 'gray'}
-        label={status?.toUpperCase()}
-      />
-    );
+  const getReportPrimaryAccount = (report) =>
+    report?.primaryAccount || report?.accountName || report?.summary?.primaryAccount || '—';
+
+  const getReportTopIssues = (report) => {
+    if (Array.isArray(report?.topIssues) && report.topIssues.length > 0) {
+      return report.topIssues;
+    }
+    if (report?.status === 'processing') return ['In progress'];
+    return [];
   };
 
-  const columns = [
+  const totalCases = report?.summary?.totalCases ?? report?.caseCount ?? '—';
+  const primaryAccount = getReportPrimaryAccount(report);
+  const topIssues = getReportTopIssues(report);
+  const createdAt = report?.createdAt ? formatDate(report.createdAt) : '—';
+
+  const menuItems = [
     {
-      title: 'Report Name',
-      key: 'name',
-      render: (name, record) => (
-        <FlexLayout alignItems="center" itemSpacing="12px">
-          <span className={styles.fileIcon}>📄</span>
-          <FlexLayout flexDirection="column">
-            <TextLabel className={styles.reportName}>{name}</TextLabel>
-            <TextLabel type="secondary" className={styles.fileName}>
-              {record.fileName}
-            </TextLabel>
-          </FlexLayout>
-        </FlexLayout>
-      ),
+      key: 'view',
+      label: 'View Report',
+      onClick: () => navigate(`/dashboard/${report.id}/action-center`),
     },
     {
-      title: 'Uploaded',
-      key: 'createdAt',
-      render: (createdAt) => formatDate(createdAt),
-    },
-    {
-      title: 'Cases',
-      key: 'caseCount',
-      render: (caseCount) => `${caseCount} cases`,
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      render: (status) => getStatusBadge(status),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <FlexLayout itemSpacing="8px">
-          <Button
-            type="secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewReport(record.id);
-            }}
-          >
-            View
-          </Button>
-          <Button
-            type="borderless"
-            onClick={(e) => handleDeleteReport(record.id, e)}
-          >
-            Delete
-          </Button>
-        </FlexLayout>
-      ),
+      key: 'delete',
+      label: 'Delete',
+      danger: true,
+      onClick: () => {
+        if (window.confirm('Are you sure you want to delete this report?')) {
+          onDelete(report.id);
+        }
+      },
     },
   ];
+
+  return (
+    <Card
+      title={report.name || 'Untitled Report'}
+      className={styles.reportCard}
+      onClick={() => navigate(`/dashboard/${report.id}/action-center`)}
+      extra={
+        <div className={styles.cardExtra}>
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <MoreOutlined
+              className={styles.menuIcon}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        </div>
+      }
+    >
+      <Descriptions column={1} size="small">
+        <Descriptions.Item label="Total Cases">{totalCases}</Descriptions.Item>
+        <Descriptions.Item label="Primary Account">{primaryAccount}</Descriptions.Item>
+        <Descriptions.Item label="Top Issues">
+          {topIssues.length === 0 ? (
+            '—'
+          ) : (
+            <div className={styles.issueChips}>
+              {topIssues.slice(0, 2).map((issue) => {
+                const colorVariants = [
+                  styles.issueChipBlue,
+                  styles.issueChipPurple,
+                  styles.issueChipPink,
+                  styles.issueChipOrange,
+                  styles.issueChipGreen,
+                  styles.issueChipTeal,
+                  styles.issueChipIndigo,
+                  styles.issueChipRed,
+                ];
+                const hash = issue.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const colorClass = colorVariants[hash % colorVariants.length];
+
+                return (
+                  <span key={issue} className={`${styles.issueChip} ${colorClass}`}>
+                    {issue}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </Descriptions.Item>
+        <Descriptions.Item label="Created">
+          <div className={styles.dateWrapper}>
+            <CalendarOutlined className={styles.calendarIcon} />
+            <span>{createdAt}</span>
+          </div>
+        </Descriptions.Item>
+      </Descriptions>
+    </Card>
+  );
+};
+
+function MyReports() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { items, loading, error } = useSelector((state) => state.reports);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    dispatch(fetchReports());
+  }, [dispatch]);
+
+  // Use mock data for demo if no items loaded
+  const isDemoMode = items.length === 0;
+  const reports = !isDemoMode ? items : mockReports;
+
+  const handleDeleteReport = (reportId) => {
+    dispatch(deleteReport(reportId));
+  };
+
+  const filteredReports = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return reports;
+    return reports.filter((r) => {
+      const name = (r.name || '').toLowerCase();
+      const fileName = (r.fileName || '').toLowerCase();
+      const issues = (r.topIssues || []).join(' ').toLowerCase();
+      return name.includes(q) || fileName.includes(q) || issues.includes(q);
+    });
+  }, [reports, searchQuery]);
 
   if (loading) {
     return (
@@ -130,76 +160,98 @@ function MyReports() {
     );
   }
 
+  const showErrorBanner = Boolean(error) && !isDemoMode;
+
   return (
-    <StackingLayout itemSpacing="20px" className={styles.reportsPage}>
-      <FlexLayout justifyContent="space-between" alignItems="center">
-        <FlexItem>
-          <Title size="h2">My Reports</Title>
-          <TextLabel type="secondary">
-            View and manage your uploaded case reports
-          </TextLabel>
-        </FlexItem>
-        <FlexItem>
-          <Button type="primary" onClick={() => navigate('/')}>
-            Upload New Report
-          </Button>
-        </FlexItem>
-      </FlexLayout>
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <StackingLayout itemSpacing="20px" className={styles.reportsPage}>
+          {/* Page header */}
+          <div className={styles.pageHeader}>
+            <h1 className={styles.pageTitle}>My Reports</h1>
+            <p className={styles.pageSubtitle}>
+              Manage and access your active case review reports and analyses.
+            </p>
+          </div>
 
-      {error && (
-        <DashboardWidgetLayout
-          className={styles.errorBanner}
-          bodyContent={
-            <TextLabel>Error loading reports: {error}</TextLabel>
-          }
-        />
-      )}
-
-      {reports.length === 0 ? (
-        <DashboardWidgetLayout
-          header={
-            <DashboardWidgetHeader
-              title="No Reports Yet"
-              showCloseIcon={false}
-            />
-          }
-          bodyContent={
-            <FlexLayout
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              itemSpacing="16px"
-              className={styles.emptyState}
-            >
-              <span className={styles.emptyIcon}>📋</span>
-              <TextLabel type="secondary">
-                Upload your first case report to get started
-              </TextLabel>
+          {/* Top actions bar */}
+          <FlexLayout justifyContent="space-between" alignItems="center" className={styles.topActions}>
+            <FlexItem className={styles.searchWrap}>
+              <div className={styles.searchField}>
+                <span className={styles.searchIcon} aria-hidden="true">⌕</span>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  placeholder="Search reports..."
+                  className={styles.searchInput}
+                  aria-label="Search reports"
+                />
+                {searchQuery.trim().length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.searchClear}
+                    aria-label="Clear search"
+                    onClick={() => {
+                      setSearchQuery('');
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </FlexItem>
+            <FlexItem>
               <Button type="primary" onClick={() => navigate('/')}>
-                Upload Report
+                + Create New Report
               </Button>
-            </FlexLayout>
-          }
-        />
-      ) : (
-        <Table
-          columns={columns}
-          dataSource={reports}
-          rowKey="id"
-          onRowClick={(record) => handleViewReport(record.id)}
-          structure={{
-            bodyMaxHeight: '65vh',
-            columnWidths: {
-              name: '350px',
-              createdAt: '200px',
-              caseCount: '120px',
-              status: '120px',
-              actions: '180px',
-            },
-          }}
-        />
-      )}
-    </StackingLayout>
+            </FlexItem>
+          </FlexLayout>
+
+          {showErrorBanner && (
+            <div className={styles.errorBanner}>
+              Error loading reports: {error}
+            </div>
+          )}
+
+          {filteredReports.length === 0 ? (
+            <DashboardWidgetLayout
+              header={
+                <DashboardWidgetHeader title="No Reports Yet" showCloseIcon={false} />
+              }
+              bodyContent={
+                <FlexLayout
+                  flexDirection="column"
+                  alignItems="center"
+                  justifyContent="center"
+                  itemSpacing="16px"
+                  className={styles.emptyState}
+                >
+                  <span className={styles.emptyIcon}>📋</span>
+                  <p>Upload your first case report to get started</p>
+                  <Button type="primary" onClick={() => navigate('/')}>
+                    Upload Report
+                  </Button>
+                </FlexLayout>
+              }
+            />
+          ) : (
+            <>
+              <div className={styles.reportsGrid}>
+                {filteredReports.map((report) => (
+                  <ReportCard
+                    key={report.id}
+                    report={report}
+                    onDelete={handleDeleteReport}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </StackingLayout>
+      </div>
+    </div>
   );
 }
 

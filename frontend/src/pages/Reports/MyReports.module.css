@@ -1,9 +1,10 @@
 /* Page wrapper */
 .page {
-  padding: clamp(32px, 4vw, 40px) clamp(24px, 5vw, 40px);
   min-height: calc(100vh - 56px);
   background: #f8f9fa;
   position: relative;
+  padding: 40px !important;
+  box-sizing: border-box;
 }
 
 /* Removed gradient overlays to match main page background */
@@ -12,10 +13,15 @@
   margin: 0 auto;
   width: 100%;
   position: relative;
+  box-sizing: border-box;
 }
 
 .reportsPage {
   width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 /* Loading state */
@@ -30,9 +36,14 @@
 
 /* ===== TOP ACTIONS BAR ===== */
 .topActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: clamp(18px, 2.5vw, 28px);
   gap: 16px;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .searchWrap {
