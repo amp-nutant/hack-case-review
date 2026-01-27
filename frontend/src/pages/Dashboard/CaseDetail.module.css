@@ -1,0 +1,151 @@
+.caseDetail {
+  padding: 0;
+}
+
+.breadcrumb {
+  margin-bottom: 16px;
+}
+
+.caseHeader {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.caseNumberRow {
+  margin-bottom: 8px;
+}
+
+.caseNumber {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: #667eea;
+  background: #eff6ff;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.caseTitle {
+  margin: 0;
+}
+
+.priorityBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.priorityCritical {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.priorityHigh {
+  background-color: #ffedd5;
+  color: #9a3412;
+}
+
+.priorityMedium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.priorityLow {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section h4 {
+  margin-bottom: 16px;
+}
+
+.description {
+  line-height: 1.6;
+  color: #374151;
+}
+
+.analysisCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.analysisItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tag {
+  background: #e5e7eb;
+  color: #374151;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.metaCard {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metaCard h5 {
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.metaItem:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,131 @@
+export const mockClusters = [
+  {
+    id: 'cluster-1',
+    name: 'Network Issues',
+    description: 'Cases related to network connectivity, configuration, and communication problems',
+    count: 28,
+    percentage: 18,
+    color: '#ef4444',
+    keywords: ['network', 'connectivity', 'timeout', 'communication'],
+  },
+  {
+    id: 'cluster-2',
+    name: 'Storage Operations',
+    description: 'Issues with storage controllers, volumes, and data operations',
+    count: 35,
+    percentage: 22,
+    color: '#f97316',
+    keywords: ['storage', 'disk', 'volume', 'iops'],
+  },
+  {
+    id: 'cluster-3',
+    name: 'Performance',
+    description: 'Slow response times, latency issues, and resource bottlenecks',
+    count: 24,
+    percentage: 15,
+    color: '#eab308',
+    keywords: ['slow', 'performance', 'latency', 'timeout'],
+  },
+  {
+    id: 'cluster-4',
+    name: 'Backup & Recovery',
+    description: 'Backup job failures, restore issues, and protection domain problems',
+    count: 19,
+    percentage: 12,
+    color: '#22c55e',
+    keywords: ['backup', 'restore', 'recovery', 'protection'],
+  },
+  {
+    id: 'cluster-5',
+    name: 'Upgrade Issues',
+    description: 'Problems occurring after software or firmware upgrades',
+    count: 22,
+    percentage: 14,
+    color: '#3b82f6',
+    keywords: ['upgrade', 'update', 'firmware', 'version'],
+  },
+  {
+    id: 'cluster-6',
+    name: 'Authentication',
+    description: 'Login failures, permission issues, and authentication errors',
+    count: 15,
+    percentage: 10,
+    color: '#8b5cf6',
+    keywords: ['authentication', 'login', 'permission', 'access'],
+  },
+  {
+    id: 'cluster-7',
+    name: 'Other',
+    description: 'Miscellaneous issues not fitting other categories',
+    count: 13,
+    percentage: 9,
+    color: '#6b7280',
+    keywords: [],
+  },
+];
+
+export const mockSummary = {
+  overview: 'This report contains 156 cases from Q4 2025, with the majority relating to storage and network operations. There is a notable increase in upgrade-related issues following the recent AOS release.',
+  keyFindings: [
+    'Storage operation issues increased by 25% compared to Q3',
+    'Network connectivity problems often correlate with firmware updates',
+    '35% of cases could potentially be resolved with knowledge base articles',
+    'Average resolution time improved by 18% compared to previous quarter',
+  ],
+  recommendations: [
+    'Consider implementing pre-upgrade validation checks',
+    'Update knowledge base with common storage troubleshooting steps',
+    'Review network configuration best practices documentation',
+    'Implement proactive monitoring for identified patterns',
+  ],
+  trends: {
+    improving: ['Resolution time', 'Customer satisfaction', 'First contact resolution'],
+    declining: ['Storage-related cases', 'Upgrade issues'],
+    stable: ['Network cases', 'Authentication issues'],
+  },
+};
+
+export const mockChartData = {
+  priorityDistribution: [
+    { name: 'Critical', value: 12, color: '#ef4444' },
+    { name: 'High', value: 38, color: '#f97316' },
+    { name: 'Medium', value: 67, color: '#eab308' },
+    { name: 'Low', value: 39, color: '#22c55e' },
+  ],
+  statusOverview: [
+    { name: 'Open', value: 45 },
+    { name: 'In Progress', value: 38 },
+    { name: 'Resolved', value: 52 },
+    { name: 'Closed', value: 21 },
+  ],
+  casesOverTime: [
+    { date: '2025-12-01', count: 12 },
+    { date: '2025-12-02', count: 8 },
+    { date: '2025-12-03', count: 15 },
+    { date: '2025-12-04', count: 10 },
+    { date: '2025-12-05', count: 18 },
+    { date: '2025-12-06', count: 5 },
+    { date: '2025-12-07', count: 3 },
+    { date: '2025-12-08', count: 14 },
+    { date: '2025-12-09', count: 11 },
+    { date: '2025-12-10', count: 16 },
+    { date: '2025-12-11', count: 9 },
+    { date: '2025-12-12', count: 13 },
+    { date: '2025-12-13', count: 7 },
+    { date: '2025-12-14', count: 15 },
+  ],
+  assigneeWorkload: [
+    { name: 'John Smith', open: 8, inProgress: 5, resolved: 12 },
+    { name: 'Sarah Johnson', open: 6, inProgress: 7, resolved: 15 },
+    { name: 'Mike Chen', open: 5, inProgress: 4, resolved: 10 },
+    { name: 'Emily Davis', open: 4, inProgress: 6, resolved: 18 },
+    { name: 'Alex Thompson', open: 7, inProgress: 3, resolved: 8 },
+    { name: 'Unassigned', open: 15, inProgress: 0, resolved: 0 },
+  ],
+};
+
+export default {
+  mockClusters,
+  mockSummary,
+  mockChartData,
+};
