@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "query": "node query.js",
     "analyze": "node analyze.js",
+    "extract-tags": "node extractTags.js",
     "fetch-case": "node src/scripts/fetchCase.js",
     "list-cases": "node src/scripts/fetchCase.js --list"
   },
