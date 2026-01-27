@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "fetch-case": "node src/scripts/fetchCase.js",
+    "list-cases": "node src/scripts/fetchCase.js --list"
   },
   "dependencies": {
     "axios": "^1.7.9",
@@ -16,7 +18,8 @@
     "helmet": "^8.0.0",
     "mongoose": "^8.9.4",
     "morgan": "^1.10.0",
-    "openai": "^4.77.3"
+    "openai": "^4.77.3",
+    "pg": "^8.17.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -24,4 +27,3 @@
     "globals": "^15.14.0"
   }
 }
-

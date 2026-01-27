@@ -11,19 +11,26 @@ const getClient = () => {
 
   const { llm } = config;
 
-  if (!llm.apiKey) {
-    throw new Error('LLM API key not configured');
-  }
+  // Check for custom endpoint with token (GPT OSS setup)
+  if (llm.apiUrl && llm.apiToken) {
+    // Extract base URL (remove /chat/completions if present for OpenAI SDK)
+    let baseURL = llm.apiUrl;
+    if (baseURL.endsWith('/chat/completions')) {
+      baseURL = baseURL.replace('/chat/completions', '');
+    }
 
-  if (llm.provider === 'azure') {
     openaiClient = new OpenAI({
-      apiKey: llm.apiKey,
-      baseURL: `${llm.azureEndpoint}/openai/deployments/${llm.azureDeployment}`,
-      defaultQuery: { 'api-version': llm.azureApiVersion },
-      defaultHeaders: { 'api-key': llm.apiKey },
+      apiKey: llm.apiToken, // Use token as API key
+      baseURL: baseURL,
+      defaultHeaders: {
+        Authorization: `Bearer ${llm.apiToken}`,
+      },
     });
   } else {
     // Default to OpenAI
+    if (!llm.apiKey) {
+      throw new Error('LLM API key not configured');
+    }
     openaiClient = new OpenAI({
       apiKey: llm.apiKey,
     });
@@ -38,10 +45,15 @@ const getClient = () => {
 export const checkLLMStatus = async () => {
   const { llm } = config;
 
+  // Check if configured via custom endpoint or API key
+  const isConfigured = !!(llm.apiToken && llm.apiUrl) || !!llm.apiKey;
+  const providerInfo = llm.apiUrl ? 'custom' : llm.provider;
+
   return {
-    configured: !!llm.apiKey,
-    provider: llm.provider,
+    configured: isConfigured,
+    provider: providerInfo,
     model: llm.model,
+    endpoint: llm.apiUrl || null,
   };
 };
 
