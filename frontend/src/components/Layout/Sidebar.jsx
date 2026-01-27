@@ -1,21 +1,25 @@
-import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
-  FlexItem,
   Menu,
-  MenuGroup,
   MenuItem,
-  Button,
+  MenuGroup,
   StackingLayout,
+  Title,
+  TextLabel,
+  Separator,
+  DotIcon,
+  Divider
 } from '@nutanix-ui/prism-reactjs';
-import './Sidebar.css';
+import { mockReports } from '../../data/mockReports';
 
 const navigationItems = [
-  { id: 'action-center', label: 'Action Center', path: 'action-center' },
-  { id: 'cases', label: 'Case List', path: 'cases' },
-  { id: 'clusters', label: 'Clusters / Similar Issues', path: 'clusters' },
-  { id: 'chat', label: 'NLP Chat', path: 'chat' },
-  { id: 'graphs', label: 'Charts & Graphs', path: 'graphs' },
+  { key: '1', label: 'Overview', path: '' },
+  { key: '2', label: 'Action Center', path: 'action-center' },
+  { key: '3', label: 'Case List', path: 'cases' },
+  { key: '4', label: 'Issue Clusters', path: 'clusters' },
+  { key: '5', label: 'NLP Chat', path: 'chat' },
+  { key: '6', label: 'Charts & Graphs', path: 'graphs' },
 ];
 
 function Sidebar() {
@@ -23,66 +27,60 @@ function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // State for controlling which menu groups are open
-  const [openKeyMap, setOpenKeyMap] = useState({ analysis: true });
+  // Get report from Redux or fallback to mock data
+  const { currentReport } = useSelector((state) => state.reports);
+  const report = currentReport || mockReports.find((r) => r.id === reportId) || mockReports[0];
 
-  const handleNavigation = (path) => {
-    navigate(`/dashboard/${reportId}/${path}`);
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
   };
 
   const getActiveKeyPath = () => {
     const currentPath = location.pathname;
-    const item = navigationItems.find(item => currentPath.includes(`/${item.path}`));
-    return item ? [item.id] : ['action-center'];
+    if (currentPath === `/dashboard/${reportId}` || currentPath === `/dashboard/${reportId}/`) {
+      return ['nav', '1'];
+    }
+    const item = navigationItems.find(item => item.path && currentPath.includes(`/${item.path}`));
+    return item ? ['nav', item.key] : ['nav', '1'];
   };
 
   const handleMenuClick = (info) => {
-    // Update open state for collapsible groups
-    if (info.openKeyMap) {
-      setOpenKeyMap(info.openKeyMap);
-    }
-    
-    // Navigate if clicking a menu item (not a group header)
-    if (!info.type) {
-      const item = navigationItems.find(i => i.id === info.key);
-      if (item) {
-        handleNavigation(item.path);
+    const clickedKey = info.key;
+    const item = navigationItems.find(item => item.key === clickedKey);
+    if (item) {
+      if (item.path === '') {
+        navigate(`/dashboard/${reportId}`);
+      } else {
+        navigate(`/dashboard/${reportId}/${item.path}`);
       }
     }
   };
 
   return (
-    <StackingLayout className="sidebar" itemSpacing="0px">
-      {/* Navigation Menu */}
-      <FlexItem flexGrow="1" className="menu-container">
-        <Menu
-          theme="light"
-          activeKeyPath={getActiveKeyPath()}
-          openKeyMap={openKeyMap}
-          onClick={handleMenuClick}
-          itemSpacing="5px"
-        >
-          <MenuGroup key="analysis" title="Analysis Views" type="collapsible">
-            {navigationItems.map((item) => (
-              <MenuItem key={item.id}>
-                {item.label}
-              </MenuItem>
-            ))}
-          </MenuGroup>
-        </Menu>
-      </FlexItem>
-
-      {/* Footer */}
-      <FlexItem className="sidebar-footer">
-        <Button
-          type="secondary"
-          fullWidth
-          onClick={() => navigate('/reports')}
-        >
-          ← Back to Reports
-        </Button>
-      </FlexItem>
-    </StackingLayout>
+    <Menu
+      itemSpacing="10px"
+      activeKeyPath={getActiveKeyPath()}
+      onClick={handleMenuClick}
+      style={{ width: '240px', minWidth: '240px', flexShrink: 0 }}
+      role={Menu.MenuRole.MENUBAR}
+    >
+      <StackingLayout padding="0px-20px">
+        <Title>{report?.name || 'Analysis Report'}</Title>
+        <TextLabel>{formatDate(report?.createdAt)}</TextLabel>
+        <Divider type="short" />
+      </StackingLayout>
+      <MenuGroup key="nav">
+        {navigationItems.map((item) => (
+          <MenuItem key={item.key}>{item.label}</MenuItem>
+        ))}
+      </MenuGroup>
+    </Menu>
   );
 }
 

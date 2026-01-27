@@ -1,11 +1,15 @@
 import { useEffect } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { FlexLayout, Title, TextLabel, Loader } from '@nutanix-ui/prism-reactjs';
+import {
+  FlexLayout,
+  TextLabel,
+  Loader,
+  StackingLayout,
+} from '@nutanix-ui/prism-reactjs';
 import { fetchReportById } from '../../redux/slices/reportsSlice';
 import { fetchCasesByReport } from '../../redux/slices/casesSlice';
 import { mockReports } from '../../data/mockReports';
-import styles from './AnalysisDashboard.module.css';
 
 function AnalysisDashboard() {
   const { reportId } = useParams();
@@ -24,36 +28,20 @@ function AnalysisDashboard() {
 
   if (reportLoading) {
     return (
-      <div className={styles.loadingContainer}>
-        <Loader />
-        <TextLabel>Loading analysis...</TextLabel>
-      </div>
+      <FlexLayout 
+        alignItems="center" 
+        justifyContent="center"
+        style={{ height: '100%', minHeight: '400px' }}
+      >
+        <StackingLayout alignItems="center" itemSpacing="16px">
+          <Loader />
+          <TextLabel>Loading analysis...</TextLabel>
+        </StackingLayout>
+      </FlexLayout>
     );
   }
 
-  return (
-    <div className={styles.dashboard}>
-      <div className={styles.dashboardHeader}>
-        <FlexLayout justifyContent="space-between" alignItems="center">
-          <div>
-            <Title size="h2">{report?.name || 'Analysis Dashboard'}</Title>
-            <TextLabel type="secondary">
-              {report?.caseCount || 0} cases analyzed
-            </TextLabel>
-          </div>
-          <div className={styles.reportMeta}>
-            <TextLabel type="secondary">
-              Report ID: {reportId}
-            </TextLabel>
-          </div>
-        </FlexLayout>
-      </div>
-
-      <div className={styles.dashboardContent}>
-        <Outlet context={{ report, reportId }} />
-      </div>
-    </div>
-  );
+  return <Outlet context={{ report, reportId }} />;
 }
 
 export default AnalysisDashboard;

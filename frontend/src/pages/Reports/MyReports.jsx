@@ -31,7 +31,7 @@ function MyReports() {
   const reports = items.length > 0 ? items : mockReports;
 
   const handleViewReport = (reportId) => {
-    navigate(`/dashboard/${reportId}/action-center`);
+    navigate(`/dashboard/${reportId}`);
   };
 
   const handleDeleteReport = (reportId, e) => {

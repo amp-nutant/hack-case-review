@@ -4,6 +4,7 @@ import { UploadData } from './pages/Upload';
 import { MyReports } from './pages/Reports';
 import {
   AnalysisDashboard,
+  DashboardOverview,
   ActionCenter,
   CaseList,
   CaseDetail,
@@ -25,10 +26,11 @@ function App() {
 
         {/* Analysis Dashboard with nested routes */}
         <Route path="/dashboard/:reportId" element={<AnalysisDashboard />}>
-          {/* Default redirect to action-center */}
-          <Route index element={<Navigate to="action-center" replace />} />
+          {/* Dashboard Overview as default */}
+          <Route index element={<DashboardOverview />} />
           
           {/* Dashboard sub-pages */}
+          <Route path="overview" element={<DashboardOverview />} />
           <Route path="action-center" element={<ActionCenter />} />
           <Route path="cases" element={<CaseList />} />
           <Route path="cases/:caseId" element={<CaseDetail />} />
