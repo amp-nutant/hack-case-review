@@ -1,0 +1,72 @@
+.uploadPage {
+  min-height: calc(100vh - 56px);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.dropZone {
+  background: #fafafa;
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  padding: 48px 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.dropZone:hover,
+.dropZone.active {
+  border-color: #22a5f7;
+  background: #f0f9ff;
+}
+
+.dropZone.hasFile {
+  border-color: #52c41a;
+  background: #f6ffed;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadIcon,
+.fileIcon {
+  font-size: 48px;
+  display: block;
+}
+
+.fileName {
+  font-weight: 500;
+}
+
+.supportedFormats {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.errorText {
+  color: #ff4d4f !important;
+}
+
+.features {
+  margin-top: 16px;
+}
+
+.featureCard {
+  text-align: center;
+  height: 100%;
+}
+
+.featureIcon {
+  font-size: 40px;
+}
+
+.featureDesc {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .features {
+    flex-direction: column;
+  }
+}

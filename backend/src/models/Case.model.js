@@ -2,11 +2,22 @@ import mongoose from 'mongoose';
 
 const caseSchema = new mongoose.Schema(
   {
+    reportId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Report',
+      required: true,
+      index: true,
+    },
+    caseNumber: {
+      type: String,
+      required: [true, 'Case number is required'],
+      trim: true,
+    },
     title: {
       type: String,
       required: [true, 'Title is required'],
       trim: true,
-      maxlength: [200, 'Title cannot exceed 200 characters'],
+      maxlength: [500, 'Title cannot exceed 500 characters'],
     },
     description: {
       type: String,
@@ -26,6 +37,10 @@ const caseSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    customer: {
+      type: String,
+      trim: true,
+    },
     tags: [
       {
         type: String,
@@ -33,8 +48,9 @@ const caseSchema = new mongoose.Schema(
       },
     ],
     analysis: {
-      summary: String,
-      recommendations: [String],
+      category: String,
+      similarCount: Number,
+      recommendation: String,
       generatedAt: Date,
     },
     metadata: {

@@ -1,0 +1,127 @@
+.actionCenter {
+  padding: 0;
+}
+
+.pageTitle {
+  margin-bottom: 4px;
+}
+
+.pageSubtitle {
+  margin-bottom: 24px;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.metricCard {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metricLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.metricValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.metricChange {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.metricChange.positive {
+  color: #10b981;
+}
+
+.metricChange.negative {
+  color: #ef4444;
+}
+
+.actionsSection {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.actionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.actionCard {
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionCard:hover {
+  background: #f3f4f6;
+}
+
+.actionCard.critical {
+  border-left-color: #ef4444;
+  background: #fef2f2;
+}
+
+.actionCard.warning {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.actionCard.info {
+  border-left-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.actionCard.success {
+  border-left-color: #10b981;
+  background: #ecfdf5;
+}
+
+.actionTitle {
+  margin-bottom: 4px;
+}
+
+.actionCount {
+  background: #111827;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .metricsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+}

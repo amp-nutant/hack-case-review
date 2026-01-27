@@ -1,0 +1,116 @@
+.caseList {
+  padding: 0;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.searchInput {
+  width: 300px;
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+}
+
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.clickableRow {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickableRow:hover {
+  background-color: #f9fafb;
+}
+
+.caseNumber {
+  font-family: monospace;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.caseTitle {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.priorityBadge,
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.priorityCritical {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.priorityHigh {
+  background-color: #ffedd5;
+  color: #9a3412;
+}
+
+.priorityMedium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.priorityLow {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.statusOpen {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.statusInProgress {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.statusResolved {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.statusClosed {
+  background-color: #e5e7eb;
+  color: #374151;
+}
