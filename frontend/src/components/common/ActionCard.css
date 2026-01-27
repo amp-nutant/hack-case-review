@@ -1,0 +1,23 @@
+.action-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.action-card-rank {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
