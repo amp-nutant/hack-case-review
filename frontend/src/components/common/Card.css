@@ -1,0 +1,33 @@
+.card {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+/* Highlight variants - left border accent */
+.card--highlight-red,
+.card--highlight-green,
+.card--highlight-blue,
+.card--highlight-orange {
+  border-left: 4px solid transparent;
+}
+
+.card--highlight-red {
+  border-left-color: #ef4444;
+}
+
+.card--highlight-green {
+  border-left-color: #22c55e;
+}
+
+.card--highlight-blue {
+  border-left-color: #3b82f6;
+}
+
+.card--highlight-orange {
+  border-left-color: #f97316;
+}

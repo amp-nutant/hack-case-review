@@ -6,176 +6,212 @@ import {
   TextLabel,
   Button,
   StackingLayout,
-  DashboardWidgetLayout,
-  DashboardWidgetHeader,
   Badge,
+  BackIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  AIIcon,
+  Paragraph,
+  Divider,
 } from '@nutanix-ui/prism-reactjs';
 import { mockCases } from '../../data/mockCases';
-import styles from './CaseDetail.module.css';
+import { Card } from '../../components/common';
 
 function CaseDetail() {
   const { reportId, caseId } = useParams();
   const navigate = useNavigate();
 
-  // Find case from mock data
-  const caseData = mockCases.find((c) => c.id === caseId) || mockCases[0];
+  // Find case and its index from mock data
+  const currentIndex = mockCases.findIndex((c) => c.id === caseId);
+  const caseData = currentIndex !== -1 ? mockCases[currentIndex] : mockCases[0];
+  const actualIndex = currentIndex !== -1 ? currentIndex : 0;
+
+  // Navigation helpers
+  const hasPrevious = actualIndex > 0;
+  const hasNext = actualIndex < mockCases.length - 1;
+
+  const goToPrevious = () => {
+    if (hasPrevious) {
+      const prevCase = mockCases[actualIndex - 1];
+      navigate(`/dashboard/${reportId}/cases/${prevCase.id}`);
+    }
+  };
+
+  const goToNext = () => {
+    if (hasNext) {
+      const nextCase = mockCases[actualIndex + 1];
+      navigate(`/dashboard/${reportId}/cases/${nextCase.id}`);
+    }
+  };
+
+  const goBack = () => {
+    navigate(`/dashboard/${reportId}/cases`);
+  };
+
+  const getPriorityLabel = () => {
+    // Derive priority from issues count
+    if (caseData.issues && caseData.issues.length >= 3) return 'P1';
+    if (caseData.issues && caseData.issues.length >= 2) return 'P2';
+    if (caseData.issues && caseData.issues.length >= 1) return 'P3';
+    return 'P4';
+  };
 
   const getPriorityColor = (priority) => {
-    const colorMap = {
-      critical: 'red',
-      high: 'orange',
-      medium: 'yellow',
-      low: 'green',
+    const colors = {
+      P1: 'red',
+      P2: 'orange',
+      P3: 'yellow',
+      P4: 'gray',
     };
-    return colorMap[priority] || 'gray';
+    return colors[priority] || 'gray';
   };
 
   const getStatusColor = (status) => {
-    const colorMap = {
+    const statusColors = {
       open: 'blue',
       in_progress: 'yellow',
       resolved: 'green',
       closed: 'gray',
     };
-    return colorMap[status] || 'gray';
+    return statusColors[status] || 'gray';
   };
 
+  const priority = getPriorityLabel();
+
   return (
-    <StackingLayout itemSpacing="24px" className={styles.caseDetail}>
-      {/* Breadcrumb */}
-      <FlexItem>
-        <Button
-          type="borderless"
-          onClick={() => navigate(`/dashboard/${reportId}/cases`)}
-        >
-          ← Back to Case List
-        </Button>
-      </FlexItem>
-
+    <StackingLayout itemGap='L' style={{ padding: '18px' }}>
       {/* Case Header */}
-      <DashboardWidgetLayout
-        bodyContent={
-          <FlexLayout justifyContent="space-between" alignItems="flex-start" padding="24px">
-            <StackingLayout itemSpacing="12px">
-              <FlexLayout alignItems="center" itemSpacing="12px">
-                <Badge color="blue" label={caseData.caseNumber} />
-                <Badge 
-                  color={getPriorityColor(caseData.priority)} 
-                  label={caseData.priority?.toUpperCase()} 
-                />
-                <Badge 
-                  color={getStatusColor(caseData.status)} 
-                  label={caseData.status?.replace('_', ' ').toUpperCase()} 
-                />
-              </FlexLayout>
-              <Title size="h2">{caseData.title}</Title>
-            </StackingLayout>
-            <FlexLayout itemSpacing="12px">
-              <Button type="secondary">Edit</Button>
-              <Button type="primary">Resolve</Button>
+      <FlexLayout alignItems="flex-start" justifyContent="space-between">
+        <FlexLayout alignItems="flex-start" itemGap="L">
+          <Button
+            type="tertiary"
+            onClick={goBack}
+            aria-label="Back to case list"
+          >
+            <BackIcon />
+          </Button>
+          <StackingLayout itemGap='M'>
+            <FlexLayout alignItems="center" itemGap='M'>
+              <Title size="h1">{caseData.caseNumber}</Title>
+              <Badge color={getPriorityColor(priority)} count={priority} />
             </FlexLayout>
-          </FlexLayout>
-        }
-      />
+            <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{caseData.title}</TextLabel>
+          </StackingLayout>
+        </FlexLayout>
+        
+        <FlexLayout itemGap='M'>
+          <Button
+            type="secondary"
+            onClick={goToPrevious}
+            disabled={!hasPrevious}
+          >
+            <ChevronLeftIcon /> Previous
+          </Button>
+          <Button
+            type="secondary"
+            onClick={goToNext}
+            disabled={!hasNext}
+          >
+            Next <ChevronRightIcon />
+          </Button>
+        </FlexLayout>
+      </FlexLayout>
 
-      {/* Main Content Grid */}
-      <FlexLayout itemSpacing="24px" className={styles.contentGrid}>
-        {/* Left Column - Main Content */}
-        <FlexItem flexGrow="1">
-          <StackingLayout itemSpacing="24px">
-            {/* Description */}
-            <DashboardWidgetLayout
-              header={
-                <DashboardWidgetHeader title="Description" showCloseIcon={false} />
-              }
-              bodyContent={
-                <StackingLayout padding="16px">
-                  <TextLabel className={styles.description}>
-                    {caseData.description}
-                  </TextLabel>
-                </StackingLayout>
-              }
-            />
-
-            {/* AI Analysis */}
-            <DashboardWidgetLayout
-              header={
-                <DashboardWidgetHeader title="AI Analysis" showCloseIcon={false} />
-              }
-              bodyContent={
-                <StackingLayout padding="16px" itemSpacing="16px">
-                  <FlexLayout itemSpacing="24px">
-                    <StackingLayout itemSpacing="4px">
-                      <TextLabel type="secondary">Suggested Category</TextLabel>
-                      <TextLabel>{caseData.analysis?.category || 'Network Configuration'}</TextLabel>
-                    </StackingLayout>
-                    <StackingLayout itemSpacing="4px">
-                      <TextLabel type="secondary">Similar Cases</TextLabel>
-                      <TextLabel>{caseData.analysis?.similarCount || 5} similar cases found</TextLabel>
-                    </StackingLayout>
+      {/* Main Content Grid - 80% left, 20% right */}
+      <FlexLayout itemGap='M'>
+        {/* Left Column - 80% */}
+        <FlexItem style={{ flex: '0 0 75%' }}>
+          <StackingLayout itemGap='L'>
+            {/* NXpert Analysis Card */}
+            <Card highlight="blue">
+              <StackingLayout itemGap='M' style={{ padding: '12px' }}>
+                <FlexLayout justifyContent="space-between" alignItems="center">
+                  <FlexLayout alignItems="center" itemGap='M'>
+                    <AIIcon />
+                    <Title size="h3">NXpert Summary</Title>
                   </FlexLayout>
-                  <StackingLayout itemSpacing="4px">
-                    <TextLabel type="secondary">Recommended Action</TextLabel>
-                    <TextLabel>{caseData.analysis?.recommendation || 'Check network configuration settings'}</TextLabel>
-                  </StackingLayout>
-                </StackingLayout>
-              }
-            />
-
-            {/* Tags */}
-            <DashboardWidgetLayout
-              header={
-                <DashboardWidgetHeader title="Tags" showCloseIcon={false} />
-              }
-              bodyContent={
-                <FlexLayout padding="16px" itemSpacing="8px" flexWrap="wrap">
-                  {(caseData.tags || ['hardware', 'network', 'urgent']).map((tag, index) => (
-                    <Badge key={index} color="gray" label={tag} />
-                  ))}
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO}>Powered by NXpert</TextLabel>
                 </FlexLayout>
-              }
-            />
+                <Paragraph>{caseData.analysis?.summary || 
+                    `This case involves a PE-PC connectivity issue caused by firewall rules blocking port 9440 after firmware upgrade. The root cause is a known issue with firewall configuration persistence during upgrades in AOS 6.5.x. Resolution involves re-applying firewall rules and verifying service status.`
+                  }</Paragraph>
+                  
+              </StackingLayout>
+            </Card>
           </StackingLayout>
         </FlexItem>
 
-        {/* Right Column - Sidebar */}
-        <FlexItem className={styles.sidebarColumn}>
-          <DashboardWidgetLayout
-            header={
-              <DashboardWidgetHeader title="Case Details" showCloseIcon={false} />
-            }
-            bodyContent={
-              <StackingLayout padding="16px" itemSpacing="16px">
-                <StackingLayout itemSpacing="4px">
-                  <TextLabel type="secondary">Status</TextLabel>
-                  <Badge 
-                    color={getStatusColor(caseData.status)} 
-                    label={caseData.status?.replace('_', ' ')} 
-                  />
+        {/* Right Column - 30% */}
+        <FlexItem style={{ flex: '0 0 25%' }}>
+          <StackingLayout itemGap="L">
+            {/* Case Information Card */}
+            <Card>
+              <StackingLayout itemGap="M" style={{ padding: '12px' }}>
+                <Title size="h3">Case Information</Title>
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO}>Created</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{new Date(caseData.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</TextLabel>
+                 </StackingLayout>
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO}>Closed</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{caseData.closedAt ? new Date(caseData.closedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Open'}</TextLabel>
                 </StackingLayout>
                 
-                <StackingLayout itemSpacing="4px">
-                  <TextLabel type="secondary">Assignee</TextLabel>
-                  <TextLabel>{caseData.assignee || 'Unassigned'}</TextLabel>
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO}>Age</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} >{Math.ceil((new Date() - new Date(caseData.createdAt)) / (1000 * 60 * 60 * 24))} days</TextLabel>
                 </StackingLayout>
                 
-                <StackingLayout itemSpacing="4px">
-                  <TextLabel type="secondary">Customer</TextLabel>
-                  <TextLabel>{caseData.customer || 'Acme Corp'}</TextLabel>
+                <Divider />
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO}>Account</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{caseData.accountName || 'Unknown'}</TextLabel>
                 </StackingLayout>
                 
-                <StackingLayout itemSpacing="4px">
-                  <TextLabel type="secondary">Created</TextLabel>
-                  <TextLabel>{new Date(caseData.createdAt).toLocaleString()}</TextLabel>
-                </StackingLayout>
-                
-                <StackingLayout itemSpacing="4px">
-                  <TextLabel type="secondary">Updated</TextLabel>
-                  <TextLabel>{new Date(caseData.updatedAt).toLocaleString()}</TextLabel>
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO}>Owner</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{caseData.owner || 'John Smith'}</TextLabel>
                 </StackingLayout>
               </StackingLayout>
-            }
-          />
+            </Card>
+
+            {/* Technical Details Card */}
+            <Card>
+              <StackingLayout itemGap="M" style={{ padding: '12px' }}>
+                <Title size="h3">Technical Details</Title>
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>AOS Version</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{caseData.aosVersion || 'N/A'}</TextLabel>
+                </StackingLayout>
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>Hypervisor</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{caseData.hypervisorVersion || 'N/A'}</TextLabel>
+                </StackingLayout>
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>PC Version</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{caseData.pcVersion || 'pc.2024.1'}</TextLabel>
+                </StackingLayout>
+                
+                <Divider />
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>Case Bucket</TextLabel>
+                  <Badge color="orange" count={caseData.bucket || 'Unknown'} />
+                </StackingLayout>
+                
+                <StackingLayout itemGap="S">
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>Closure Tag</TextLabel>
+                  <Badge color="gray" count={caseData.closedTag?.value || 'N/A'} />
+                </StackingLayout>
+              </StackingLayout>
+            </Card>
+          </StackingLayout>
         </FlexItem>
       </FlexLayout>
     </StackingLayout>
