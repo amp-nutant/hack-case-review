@@ -10,9 +10,6 @@ import {
   Loader,
   StackingLayout,
   TextArea,
-  DashboardWidgetLayout,
-  DashboardWidgetHeader,
-  Badge,
 } from '@nutanix-ui/prism-reactjs';
 import { sendChatMessage, clearChatHistory } from '../../redux/slices/analysisSlice';
 import styles from './NLPChat.module.css';
@@ -77,108 +74,129 @@ function NLPChat() {
   return (
     <FlexLayout flexDirection="column" itemGap="L" className={styles.chatView} style={{ padding: '24px' }}>
       {/* Page Header */}
-      <FlexLayout justifyContent="space-between" alignItems="center">
-        <FlexLayout alignItems="center" itemGap="L">
-          <Title size="h2">NLP Chat</Title>
-          <FlexLayout alignItems="center" itemGap="S">
-            <Badge color="gray" count={`${displayHistory.length} messages`} />
-          </FlexLayout>
-        </FlexLayout>
-        <Button
-          type="borderless"
+      <div className={styles.pageHeader}>
+        <div className={styles.headerLeft}>
+          <div className={styles.chatTitle}>
+            <div className={styles.chatIcon}>
+              <span role="img" aria-label="chat">💬</span>
+            </div>
+            <Title size="h2">NLP Chat</Title>
+          </div>
+          <div className={styles.messageBadge}>
+            {displayHistory.length} {displayHistory.length === 1 ? 'message' : 'messages'}
+          </div>
+        </div>
+        <button
+          className={styles.clearButton}
           onClick={() => dispatch(clearChatHistory())}
         >
+          <span>🗑️</span>
           Clear Chat
-        </Button>
-      </FlexLayout>
+        </button>
+      </div>
 
-      <DashboardWidgetLayout
-        className={styles.chatContainer}
-        header={
-          <DashboardWidgetHeader
-            title="AI Assistant"
-            showCloseIcon={false}
-          />
-        }
-        bodyContent={
-          <StackingLayout itemSpacing="0px" className={styles.chatBody}>
-            {/* Messages */}
-            <div className={styles.messagesContainer}>
-              {displayHistory.map((message, index) => (
-                <FlexLayout
-                  key={index}
-                  className={`${styles.message} ${styles[message.role]}`}
-                  itemSpacing="12px"
-                >
-                  <div className={styles.messageAvatar}>
-                    {message.role === 'assistant' ? '🤖' : '👤'}
-                  </div>
-                  <FlexLayout flexDirection="column" itemSpacing="4px" className={styles.messageContent}>
-                    <FlexLayout itemSpacing="8px" alignItems="center">
-                      <TextLabel className={styles.messageSender}>
-                        {message.role === 'assistant' ? 'AI Assistant' : 'You'}
-                      </TextLabel>
-                      <TextLabel type="secondary" className={styles.messageTime}>
-                        {new Date(message.timestamp).toLocaleTimeString()}
-                      </TextLabel>
-                    </FlexLayout>
-                    <div className={styles.messageText}>{message.content}</div>
-                  </FlexLayout>
-                </FlexLayout>
-              ))}
-              {chatLoading && (
-                <FlexLayout className={`${styles.message} ${styles.assistant}`} itemSpacing="12px">
-                  <div className={styles.messageAvatar}>🤖</div>
-                  <FlexLayout alignItems="center" itemSpacing="8px">
-                    <Loader size="small" />
-                    <TextLabel>Analyzing...</TextLabel>
-                  </FlexLayout>
-                </FlexLayout>
-              )}
-              <div ref={messagesEndRef} />
+      {/* Main Chat Container */}
+      <div className={styles.chatContainer}>
+        {/* Custom Header */}
+        <div className={styles.widgetHeader}>
+          <div className={styles.widgetHeaderContent}>
+            <div className={styles.assistantAvatar}>
+              <span role="img" aria-label="AI">🤖</span>
             </div>
-
-            {/* Suggestions */}
-            <div className={styles.suggestionsContainer}>
-              <TextLabel type="secondary" className={styles.suggestionsLabel}>
-                Suggested questions:
-              </TextLabel>
-              <FlexLayout itemSpacing="8px" flexWrap="wrap">
-                {suggestedQuestions.map((question, index) => (
-                  <Button
-                    key={index}
-                    type="secondary"
-                    size="small"
-                    onClick={() => handleSuggestedQuestion(question)}
-                  >
-                    {question}
-                  </Button>
-                ))}
-              </FlexLayout>
+            <div className={styles.assistantInfo}>
+              <h3>AI Assistant</h3>
+              <div className={styles.statusIndicator}>
+                <span className={styles.statusDot}></span>
+                Online & Ready to Help
+              </div>
             </div>
+          </div>
+        </div>
 
-            {/* Input */}
-            <FlexLayout className={styles.inputContainer} itemSpacing="12px" alignItems="flex-end">
-              <FlexItem flexGrow="1">
-                <TextArea
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ask a question about your cases..."
-                  rows={2}
-                />
-              </FlexItem>
-              <Button
-                type="primary"
-                onClick={handleSend}
-                disabled={!inputValue.trim() || chatLoading}
+        <StackingLayout itemSpacing="0px" className={styles.chatBody}>
+          {/* Messages */}
+          <div className={styles.messagesContainer}>
+            {displayHistory.map((message, index) => (
+              <div
+                key={index}
+                className={`${styles.message} ${styles[message.role]}`}
               >
-                Send
-              </Button>
-            </FlexLayout>
-          </StackingLayout>
-        }
-      />
+                <div className={styles.messageAvatar}>
+                  {message.role === 'assistant' ? '🤖' : '👤'}
+                </div>
+                <div className={styles.messageContent}>
+                  <div className={styles.messageHeader}>
+                    <span className={styles.messageSender}>
+                      {message.role === 'assistant' ? 'AI Assistant' : 'You'}
+                    </span>
+                    <span className={styles.messageTime}>
+                      {new Date(message.timestamp).toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                  </div>
+                  <div className={styles.messageText}>{message.content}</div>
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className={`${styles.message} ${styles.assistant}`}>
+                <div className={styles.messageAvatar}>🤖</div>
+                <div className={styles.loadingMessage}>
+                  <div className={styles.typingIndicator}>
+                    <span className={styles.typingDot}></span>
+                    <span className={styles.typingDot}></span>
+                    <span className={styles.typingDot}></span>
+                  </div>
+                  <TextLabel>AI is thinking...</TextLabel>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Suggestions */}
+          <div className={styles.suggestionsContainer}>
+            <div className={styles.suggestionsLabel}>
+              Suggested questions
+            </div>
+            <div className={styles.suggestionsGrid}>
+              {suggestedQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  className={styles.suggestionChip}
+                  onClick={() => handleSuggestedQuestion(question)}
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Input */}
+          <div className={styles.inputContainer}>
+            <div className={styles.inputWrapper}>
+              <textarea
+                className={styles.chatInput}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask a question about your cases..."
+                rows={2}
+              />
+            </div>
+            <button
+              className={styles.sendButton}
+              onClick={handleSend}
+              disabled={!inputValue.trim() || chatLoading}
+            >
+              Send
+              <span className={styles.sendIcon}>→</span>
+            </button>
+          </div>
+        </StackingLayout>
+      </div>
     </FlexLayout>
   );
 }
