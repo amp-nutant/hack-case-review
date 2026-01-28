@@ -3,6 +3,9 @@ import analysisController from '../controllers/analysis.controller.js';
 
 const router = Router();
 
+// POST /api/analysis - Create analysis entry
+router.post('/', analysisController.createAnalysis);
+
 // POST /api/analysis/summary - Generate summary for a report
 router.post('/summary', analysisController.generateSummary);
 

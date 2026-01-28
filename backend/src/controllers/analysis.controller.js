@@ -169,9 +169,48 @@ export const getChatHistory = async (req, res, next) => {
   }
 };
 
+/**
+ * Create a new analysis entry from filters
+ */
+export const createAnalysis = async (req, res, next) => {
+  try {
+    const {
+      name,
+      description,
+      account,
+      component,
+      startDate,
+      endDate,
+      cases,
+    } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Name is required',
+      });
+    }
+
+    const analysis = await Analysis.create({
+      name: String(name).trim(),
+      description: description ? String(description).trim() : undefined,
+      account: account ? String(account).trim() : undefined,
+      component: component ? String(component).trim() : undefined,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      cases: Array.isArray(cases) ? cases : [],
+    });
+
+    return res.status(201).json(analysis);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export default {
   generateSummary,
   getClusters,
   chat,
   getChatHistory,
+  createAnalysis,
 };

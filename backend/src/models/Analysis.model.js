@@ -1,85 +1,35 @@
 import mongoose from 'mongoose';
 
-const clusterSchema = new mongoose.Schema({
-  name: String,
-  description: String,
-  count: Number,
-  percentage: Number,
-  color: String,
-  keywords: [String],
-  caseIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Case' }],
-});
-
 const analysisSchema = new mongoose.Schema(
   {
-    reportId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Report',
-      required: true,
-      index: true,
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      maxlength: [200, 'Name cannot exceed 200 characters'],
     },
-    summary: {
-      overview: String,
-      keyFindings: [String],
-      recommendations: [String],
-      trends: {
-        improving: [String],
-        declining: [String],
-        stable: [String],
-      },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [1000, 'Description cannot exceed 1000 characters'],
     },
-    clusters: [clusterSchema],
-    chatHistory: [
-      {
-        role: {
-          type: String,
-          enum: ['user', 'assistant'],
-          required: true,
-        },
-        content: {
-          type: String,
-          required: true,
-        },
-        timestamp: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-    chartData: {
-      priorityDistribution: [
-        {
-          name: String,
-          value: Number,
-          color: String,
-        },
-      ],
-      statusOverview: [
-        {
-          name: String,
-          value: Number,
-        },
-      ],
-      casesOverTime: [
-        {
-          date: String,
-          count: Number,
-        },
-      ],
-      assigneeWorkload: [
-        {
-          name: String,
-          open: Number,
-          inProgress: Number,
-          resolved: Number,
-        },
-      ],
+    account: {
+      type: String,
+      trim: true,
     },
-    generatedAt: {
+    component: {
+      type: String,
+      trim: true,
+    },
+    startDate: {
       type: Date,
     },
-    lastUpdatedAt: {
+    endDate: {
       type: Date,
+    },
+    cases: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: [],
     },
   },
   {
@@ -96,8 +46,8 @@ const analysisSchema = new mongoose.Schema(
   }
 );
 
-// Ensure one analysis per report
-analysisSchema.index({ reportId: 1 }, { unique: true });
+analysisSchema.index({ createdAt: -1 });
+analysisSchema.index({ account: 1, component: 1 });
 
 const Analysis = mongoose.model('Analysis', analysisSchema);
 
