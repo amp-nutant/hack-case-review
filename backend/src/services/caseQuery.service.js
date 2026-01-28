@@ -45,30 +45,6 @@ function isInternalComment(comment) {
 }
 
 /**
- * Determine if message is from customer
- */
-function isCustomerMessage(email, caseData) {
-  if (!email) return false;
-  
-  const fromAddress = (email.fromaddress || '').toLowerCase();
-  const customerEmail = (caseData.contact_email__c || '').toLowerCase();
-  
-  // Check if incoming and from customer domain
-  if (email.incoming) {
-    // If from address matches customer email
-    if (customerEmail && fromAddress.includes(customerEmail.split('@')[0])) {
-      return true;
-    }
-    // If not from nutanix domain, likely customer
-    if (!INTERNAL_DOMAINS.some(domain => fromAddress.includes(domain.toLowerCase()))) {
-      return true;
-    }
-  }
-  
-  return false;
-}
-
-/**
  * Fetch complete case details including conversations, tags, resolution, and metrics
  * @param {string} caseNumber - The case number (e.g., '00475706')
  * @returns {Promise<Object>} Complete case data as JSON
@@ -100,6 +76,9 @@ export const getCaseDetails = async (caseNumber) => {
       portal_escalation_comments__c,
       escalation_issue_summary__c,
       escalation_information__c,
+      escalation_previous_actions__c,
+      de_escalation_criteria__c,
+      escalation_latest_update__c,
       resolution__c,
       opentags__c,
       closetags__c,
@@ -278,7 +257,13 @@ export const getCaseDetails = async (caseNumber) => {
       portalEscalationComments: caseData.portal_escalation_comments__c,
       escalationIssueSummary: caseData.escalation_issue_summary__c,
       escalationInformation: caseData.escalation_information__c,
+      previousActions: caseData.escalation_previous_actions__c,
+      deEscalationCriteria: caseData.de_escalation_criteria__c,
+      latestUpdate: caseData.escalation_latest_update__c,
     },
+
+    // Prior Actions - from DB field or derived from conversation
+    priorActions: derivePriorActions(caseData, conversation),
 
     responseMetrics: responseMetrics,
 
@@ -586,6 +571,198 @@ function stripHtml(html) {
 }
 
 /**
+ * Derive prior actions from escalation field or conversation content
+ * Returns structured prior actions that were taken before escalation or current state
+ */
+function derivePriorActions(caseData, conversation) {
+  const priorActions = {
+    fromEscalation: null,
+    derived: [],
+    summary: null,
+  };
+
+  // 1. Check if escalation_previous_actions__c has data
+  if (caseData.escalation_previous_actions__c) {
+    priorActions.fromEscalation = caseData.escalation_previous_actions__c;
+    // Parse the text into structured actions
+    priorActions.derived = parseActionsFromText(caseData.escalation_previous_actions__c);
+  }
+
+  // 2. Derive from conversation if no escalation actions
+  if (priorActions.derived.length === 0 && conversation?.length > 0) {
+    // Look for "actions taken" patterns in support messages
+    const actionPatterns = [
+      /(?:actions?\s+taken|we\s+have|i\s+have|steps?\s+(?:taken|performed|completed))[\s:]+([^.]+)/gi,
+      /(?:performed|completed|executed|ran|collected)[\s:]+([^.]+)/gi,
+      /(?:verified|checked|confirmed|reviewed|analyzed)[\s:]+([^.]+)/gi,
+      /(?:attempted|tried|tested)[\s:]+([^.]+)/gi,
+      /(?:recommended|suggested|advised)[\s:]+([^.]+)/gi,
+    ];
+
+    const supportMessages = conversation.filter(m => !m.isCustomer);
+    
+    supportMessages.forEach((msg, index) => {
+      const content = msg.content || msg.contentPreview || '';
+      
+      actionPatterns.forEach(pattern => {
+        const matches = content.matchAll(pattern);
+        for (const match of matches) {
+          const action = match[1]?.trim();
+          if (action && action.length > 10 && action.length < 200) {
+            priorActions.derived.push({
+              action: action,
+              timestamp: msg.timestamp,
+              source: 'conversation',
+              messageIndex: index + 1,
+              type: categorizeAction(action),
+            });
+          }
+        }
+      });
+    });
+
+    // Also look for specific action indicators
+    const specificActions = extractSpecificActions(supportMessages);
+    priorActions.derived.push(...specificActions);
+  }
+
+  // 3. Add from escalation information if available
+  if (caseData.escalation_information__c) {
+    const escalationActions = parseActionsFromText(caseData.escalation_information__c);
+    escalationActions.forEach(a => {
+      a.source = 'escalation_info';
+      priorActions.derived.push(a);
+    });
+  }
+
+  // Deduplicate
+  priorActions.derived = deduplicateActionsList(priorActions.derived);
+
+  // Generate summary
+  priorActions.summary = generatePriorActionsSummary(priorActions);
+  priorActions.count = priorActions.derived.length;
+  priorActions.hasEscalationActions = !!priorActions.fromEscalation;
+
+  return priorActions;
+}
+
+/**
+ * Parse free-form text into structured actions
+ */
+function parseActionsFromText(text) {
+  if (!text) return [];
+  
+  const actions = [];
+  
+  // Split by common separators
+  const lines = text.split(/[\n\r;•\-\d+.]+/).filter(l => l.trim());
+  
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed.length > 10 && trimmed.length < 300) {
+      actions.push({
+        action: trimmed,
+        source: 'escalation_field',
+        type: categorizeAction(trimmed),
+      });
+    }
+  });
+
+  return actions;
+}
+
+/**
+ * Categorize an action based on its content
+ */
+function categorizeAction(action) {
+  const actionLower = action.toLowerCase();
+  
+  if (/log|collect|gather|bundle/i.test(actionLower)) return 'diagnostic';
+  if (/ncc|health.?check|cluster.?check/i.test(actionLower)) return 'health_check';
+  if (/zoom|webex|call|session|remote/i.test(actionLower)) return 'communication';
+  if (/upgrade|update|patch/i.test(actionLower)) return 'upgrade';
+  if (/config|setting|gflag|change/i.test(actionLower)) return 'configuration';
+  if (/restart|reboot|cycle/i.test(actionLower)) return 'restart';
+  if (/kb|knowledge.?base|document/i.test(actionLower)) return 'documentation';
+  if (/jira|eng|engineering|bug/i.test(actionLower)) return 'engineering';
+  if (/verify|check|confirm|review/i.test(actionLower)) return 'verification';
+  if (/recommend|suggest|advise/i.test(actionLower)) return 'recommendation';
+  
+  return 'general';
+}
+
+/**
+ * Extract specific action patterns from messages
+ */
+function extractSpecificActions(messages) {
+  const actions = [];
+  
+  const patterns = [
+    { regex: /collected\s+(?:logs?|data|bundle)/gi, type: 'diagnostic' },
+    { regex: /ran\s+(?:NCC|ncc|health.?check)/gi, type: 'health_check' },
+    { regex: /scheduled?\s+(?:zoom|call|session|webex)/gi, type: 'communication' },
+    { regex: /upgraded?\s+(?:to|from|AOS|NCC|firmware)/gi, type: 'upgrade' },
+    { regex: /(?:set|changed?|modified?|updated?)\s+(?:gflag|config|setting)/gi, type: 'configuration' },
+    { regex: /(?:restarted?|rebooted?)\s+(?:service|CVM|node|cluster)/gi, type: 'restart' },
+    { regex: /(?:referred?|shared?|sent?)\s+KB[\s-]?\d+/gi, type: 'documentation' },
+    { regex: /(?:filed?|created?|opened?)\s+(?:JIRA|ENG-|bug)/gi, type: 'engineering' },
+    { regex: /RCA|root.?cause.?analysis/gi, type: 'investigation' },
+  ];
+
+  messages.forEach((msg, index) => {
+    const content = msg.content || msg.contentPreview || '';
+    
+    patterns.forEach(({ regex, type }) => {
+      const matches = content.matchAll(regex);
+      for (const match of matches) {
+        actions.push({
+          action: match[0],
+          timestamp: msg.timestamp,
+          source: 'conversation_pattern',
+          messageIndex: index + 1,
+          type: type,
+        });
+      }
+    });
+  });
+
+  return actions;
+}
+
+/**
+ * Deduplicate actions list
+ */
+function deduplicateActionsList(actions) {
+  const seen = new Set();
+  return actions.filter(a => {
+    const key = (a.action || '').toLowerCase().substring(0, 50);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Generate summary of prior actions
+ */
+function generatePriorActionsSummary(priorActions) {
+  if (priorActions.derived.length === 0) {
+    return priorActions.fromEscalation || 'No prior actions identified';
+  }
+
+  const byType = {};
+  priorActions.derived.forEach(a => {
+    byType[a.type] = (byType[a.type] || 0) + 1;
+  });
+
+  const parts = Object.entries(byType)
+    .map(([type, count]) => `${count} ${type}`)
+    .join(', ');
+
+  return `${priorActions.derived.length} actions identified: ${parts}`;
+}
+
+/**
  * Search for cases by various criteria
  */
 export const searchCases = async (options = {}) => {
@@ -648,7 +825,231 @@ export const searchCases = async (options = {}) => {
   return result.rows;
 };
 
+/**
+ * Extract actions taken during case handling
+ * Analyzes conversation content, timeline events, and metadata
+ */
+export function extractActions(caseData) {
+  const actions = {
+    kbArticlesReferenced: [],
+    toolsUsed: [],
+    proceduresFollowed: [],
+    configChanges: [],
+    escalationActions: [],
+    diagnosticActions: [],
+    communicationActions: [],
+    resolutionActions: [],
+    keywords: [],
+  };
+
+  // Extract KB articles
+  if (caseData.caseInfo?.kbArticle) {
+    actions.kbArticlesReferenced.push(caseData.caseInfo.kbArticle);
+  }
+
+  // Extract JIRA references
+  if (caseData.caseInfo?.jiraCase) {
+    actions.toolsUsed.push({ tool: 'JIRA', reference: caseData.caseInfo.jiraCase });
+  }
+
+  // Analyze conversation for actions
+  const conversation = caseData.conversation || [];
+  const supportMessages = conversation.filter(m => !m.isCustomer);
+
+  // Action patterns to look for
+  const patterns = {
+    tools: [
+      /\b(NCC|ncc)\b.*(?:ran|run|executed|check)/i,
+      /\b(log collect|logbay|collect.*logs)/i,
+      /\b(cluster.*check|health.*check)/i,
+      /\b(allssh|ncli|acli|nuclei)/i,
+      /\b(zoom|webex|remote session|screen share)/i,
+      /\bphoenix\b/i,
+      /\bfoundation\b/i,
+      /\bLCM\b/i,
+    ],
+    procedures: [
+      /\bKB[\s-]?(\d+)/gi,
+      /\b(followed|follow|as per|per|according to).*(?:KB|procedure|doc|guide)/gi,
+      /\b(upgrade|update).*(?:AOS|NCC|firmware|hypervisor|ESXi|AHV)/gi,
+      /\b(restart|reboot).*(?:CVM|service|cluster|node|host)/gi,
+      /\b(maintenance mode|enter.*maintenance)/gi,
+      /\b(expand|remove|add).*(?:node|cluster)/gi,
+    ],
+    config: [
+      /\b(gflag|GFLAG).*(?:change|set|modify|update)/i,
+      /\b(zeus|zookeeper).*(?:config|change)/i,
+      /\b(enable|disable).*(?:EC|erasure|dedup|compression)/i,
+      /\b(network|IP|DNS|NTP).*(?:config|change|update)/i,
+      /\b(certificate|cert|SSL).*(?:update|renew|replace)/i,
+      /\b(LDAP|AD|Active Directory).*(?:config|setup)/i,
+    ],
+    diagnostic: [
+      /\b(analyzed|analysis|investigate|review).*(?:logs|data|issue)/i,
+      /\b(root cause|RCA)/i,
+      /\b(identified|found|discovered).*(?:issue|problem|error|bug)/i,
+      /\b(check|verify|confirm).*(?:status|state|config)/i,
+    ],
+    resolution: [
+      /\b(resolved|fixed|solution|workaround)/i,
+      /\b(customer confirmed|issue.*resolved)/i,
+      /\b(recommended|suggested|advised)/i,
+      /\b(applied|implemented|configured)/i,
+    ],
+  };
+
+  supportMessages.forEach(msg => {
+    const content = msg.content || msg.contentPreview || '';
+    
+    // Extract tools used
+    patterns.tools.forEach(pattern => {
+      const match = content.match(pattern);
+      if (match) {
+        actions.toolsUsed.push({ match: match[0], context: extractContext(content, match.index) });
+      }
+    });
+
+    // Extract procedures
+    patterns.procedures.forEach(pattern => {
+      const matches = content.matchAll(pattern);
+      for (const match of matches) {
+        if (match[1] && /^\d+$/.test(match[1])) {
+          actions.kbArticlesReferenced.push(`KB-${match[1]}`);
+        }
+        actions.proceduresFollowed.push({ match: match[0], context: extractContext(content, match.index) });
+      }
+    });
+
+    // Extract config changes
+    patterns.config.forEach(pattern => {
+      const match = content.match(pattern);
+      if (match) {
+        actions.configChanges.push({ match: match[0], context: extractContext(content, match.index) });
+      }
+    });
+
+    // Extract diagnostic actions
+    patterns.diagnostic.forEach(pattern => {
+      const match = content.match(pattern);
+      if (match) {
+        actions.diagnosticActions.push({ match: match[0], context: extractContext(content, match.index) });
+      }
+    });
+
+    // Extract resolution actions
+    patterns.resolution.forEach(pattern => {
+      const match = content.match(pattern);
+      if (match) {
+        actions.resolutionActions.push({ match: match[0], context: extractContext(content, match.index) });
+      }
+    });
+  });
+
+  // Extract keywords from description and resolution
+  const textToAnalyze = [
+    caseData.caseInfo?.subject || '',
+    caseData.caseInfo?.description || '',
+    caseData.resolution?.resolutionNotes || '',
+  ].join(' ');
+
+  const keywordPatterns = [
+    /\b(erasure coding|EC)\b/gi,
+    /\b(protection domain|PD)\b/gi,
+    /\b(metro|DR|disaster recovery)\b/gi,
+    /\b(LCM|lifecycle manager)\b/gi,
+    /\b(NCC|health check)\b/gi,
+    /\b(Prism Central|PC)\b/gi,
+    /\b(Prism Element|PE)\b/gi,
+    /\b(AHV|ESXi|Hyper-V|hypervisor)\b/gi,
+    /\b(Nutanix Files|Files|AFS)\b/gi,
+    /\b(Nutanix Volumes|Volumes)\b/gi,
+    /\b(Cerebro|Stargate|Curator|Cassandra|Medusa)\b/gi,
+    /\b(upgrade|update|patch)\b/gi,
+    /\b(performance|slow|latency)\b/gi,
+    /\b(storage|disk|SSD|HDD)\b/gi,
+    /\b(network|networking|NIC|bond)\b/gi,
+    /\b(VM|virtual machine)\b/gi,
+    /\b(snapshot|backup|replication)\b/gi,
+    /\b(certificate|SSL|TLS)\b/gi,
+    /\b(licensing|license)\b/gi,
+    /\b(Foundation|imaging)\b/gi,
+  ];
+
+  keywordPatterns.forEach(pattern => {
+    const matches = textToAnalyze.matchAll(pattern);
+    for (const match of matches) {
+      if (!actions.keywords.includes(match[0].toLowerCase())) {
+        actions.keywords.push(match[0].toLowerCase());
+      }
+    }
+  });
+
+  // Analyze timeline for actions
+  const timeline = caseData.timeline?.events || [];
+  timeline.forEach(event => {
+    if (event.type === 'Escalation') {
+      actions.escalationActions.push({ type: event.type, timestamp: event.timestamp, status: event.escalationStatus });
+    }
+    if (event.type === 'Owner Change') {
+      actions.communicationActions.push({ type: 'handoff', to: event.owner, timestamp: event.timestamp });
+    }
+  });
+
+  // Deduplicate
+  actions.kbArticlesReferenced = [...new Set(actions.kbArticlesReferenced)];
+  actions.toolsUsed = deduplicateByMatch(actions.toolsUsed);
+  actions.proceduresFollowed = deduplicateByMatch(actions.proceduresFollowed);
+  actions.configChanges = deduplicateByMatch(actions.configChanges);
+  actions.diagnosticActions = deduplicateByMatch(actions.diagnosticActions);
+  actions.resolutionActions = deduplicateByMatch(actions.resolutionActions);
+  actions.keywords = [...new Set(actions.keywords)];
+
+  // Generate summary
+  actions.summary = generateActionSummary(actions);
+
+  return actions;
+}
+
+function extractContext(text, index, windowSize = 100) {
+  const start = Math.max(0, index - windowSize);
+  const end = Math.min(text.length, index + windowSize);
+  return text.substring(start, end).replace(/\s+/g, ' ').trim();
+}
+
+function deduplicateByMatch(items) {
+  const seen = new Set();
+  return items.filter(item => {
+    const key = item.match?.toLowerCase() || JSON.stringify(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function generateActionSummary(actions) {
+  const parts = [];
+  
+  if (actions.kbArticlesReferenced.length > 0) {
+    parts.push(`KB articles referenced: ${actions.kbArticlesReferenced.join(', ')}`);
+  }
+  if (actions.toolsUsed.length > 0) {
+    parts.push(`Tools used: ${actions.toolsUsed.map(t => t.match || t.tool).join(', ')}`);
+  }
+  if (actions.configChanges.length > 0) {
+    parts.push(`Configuration changes: ${actions.configChanges.length} identified`);
+  }
+  if (actions.proceduresFollowed.length > 0) {
+    parts.push(`Procedures followed: ${actions.proceduresFollowed.length} identified`);
+  }
+  if (actions.keywords.length > 0) {
+    parts.push(`Key areas: ${actions.keywords.slice(0, 10).join(', ')}`);
+  }
+  
+  return parts.join('; ') || 'No specific actions identified';
+}
+
 export default {
   getCaseDetails,
   searchCases,
+  extractActions,
 };

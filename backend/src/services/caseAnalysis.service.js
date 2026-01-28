@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { invokeLLMAPI } from './llm.service.js';
+import { extractActions } from './caseQuery.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,14 +24,19 @@ try {
  * @returns {Promise<Object>} Analysis results with tags and insights
  */
 export const analyzeCase = async (caseData) => {
+  // Extract actions taken during case handling
+  console.log('📋 Extracting actions from case...');
+  const actions = extractActions(caseData);
+  console.log(`   Found: ${actions.keywords.length} keywords, ${actions.toolsUsed.length} tools, ${actions.proceduresFollowed.length} procedures`);
+
   // Prepare a condensed version of case data for LLM context
   const caseContext = prepareCaseContext(caseData);
   
   // Build the system prompt with tag lists
   const systemPrompt = buildSystemPrompt();
   
-  // Build user prompt with case data
-  const userPrompt = buildUserPrompt(caseContext);
+  // Build user prompt with case data and extracted actions
+  const userPrompt = buildUserPrompt(caseContext, actions);
 
   try {
     const response = await invokeLLMAPI({
@@ -48,6 +54,7 @@ export const analyzeCase = async (caseData) => {
       caseNumber: caseData.caseInfo.caseNumber,
       analysisTimestamp: new Date().toISOString(),
       analysis,
+      extractedActions: actions, // Include extracted actions in output
       inputSummary: {
         conversationLength: caseData.conversation?.length || 0,
         totalEvents: caseData.timeline?.totalEvents || 0,
@@ -115,6 +122,29 @@ Return a JSON object with the following structure:
     },
     "overallScore": 1-10,
     "overallExplanation": "Summary of tag accuracy across open and close tags"
+  },
+  
+  "closeTagPrediction": {
+    "predictedTags": [
+      {
+        "tag": "Exact tag name from PREDEFINED CLOSE TAGS list",
+        "confidence": "High|Medium|Low",
+        "basedOn": ["List of actions/evidence that led to this prediction"],
+        "reasoning": "Why this tag should be applied"
+      }
+    ],
+    "actionToTagMapping": {
+      "toolsUsed": ["Which close tags are suggested by the tools used"],
+      "kbArticles": ["Which close tags are suggested by KB articles referenced"],
+      "configChanges": ["Which close tags are suggested by configuration changes"],
+      "keywords": ["Which close tags are suggested by keywords identified"]
+    },
+    "topPredictions": ["Top 3-5 most confident close tag predictions"],
+    "comparisonWithApplied": {
+      "matchingTags": ["Tags that were applied and match predictions"],
+      "missingTags": ["Predicted tags that were NOT applied but should have been"],
+      "extraTags": ["Applied tags that don't match predictions - may be incorrect"]
+    }
   },
   
   "issueClassification": {
@@ -286,9 +316,9 @@ IMPORTANT GUIDELINES:
 }
 
 /**
- * Build the user prompt with case data and predefined tag lists
+ * Build the user prompt with case data, actions, and predefined tag lists
  */
-function buildUserPrompt(caseContext) {
+function buildUserPrompt(caseContext, actions) {
   return `Analyze this support case and provide structured insights.
 
 === PREDEFINED OPEN TAGS (select from this list only) ===
@@ -297,10 +327,21 @@ ${JSON.stringify(TAG_LISTS.openTags || [], null, 2)}
 === PREDEFINED CLOSE TAGS (select from this list only) ===
 ${JSON.stringify(TAG_LISTS.closeTags || [], null, 2)}
 
+=== EXTRACTED ACTIONS FROM CASE ===
+This is what was done during case handling:
+${JSON.stringify(actions, null, 2)}
+
 === CASE DATA ===
 ${JSON.stringify(caseContext, null, 2)}
 
-Remember: For tag validation, you MUST recommend tags ONLY from the predefined lists above. Explain why each tag applies or doesn't apply based on the case content.`;
+IMPORTANT INSTRUCTIONS:
+1. For tag validation, you MUST recommend tags ONLY from the predefined lists above.
+2. Use the EXTRACTED ACTIONS to help predict appropriate close tags:
+   - Tools used → map to specific product/component close tags
+   - KB articles referenced → indicate specific issue types
+   - Configuration changes → indicate config-related close tags
+   - Keywords identified → map to product areas
+3. Explain WHY each tag applies based on specific actions and case content.`;
 }
 
 /**

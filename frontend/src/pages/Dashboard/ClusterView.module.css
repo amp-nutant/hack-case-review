@@ -186,8 +186,44 @@
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
+.insightCardWrapper {
+  min-width: 280px;
+}
+
+.filterSection {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.casesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.casesTable th,
+.casesTable td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.casesTable th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.casesTable tr:hover {
+  background: #f3f4f6;
+}
+
 @media (max-width: 1024px) {
   .insightsGrid {
     grid-template-columns: 1fr;
+  }
+  
+  .insightCardWrapper {
+    min-width: 100%;
   }
 }

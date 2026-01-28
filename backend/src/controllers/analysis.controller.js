@@ -1,6 +1,13 @@
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { Analysis, Report, Case } from '../models/index.js';
 import { generateMockAnalysis, generateMockClusters } from '../utils/dataSimulator.js';
 import llmService from '../services/llm.service.js';
+import { aggregateAnalyses } from '../services/aggregation.service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Generate or get summary for a report
@@ -169,9 +176,247 @@ export const getChatHistory = async (req, res, next) => {
   }
 };
 
+/**
+ * Get aggregated analysis from output files
+ */
+export const getAggregatedAnalysis = async (req, res, next) => {
+  try {
+    const outputDir = path.join(__dirname, '../../output');
+    
+    // Try to load pre-computed aggregation first
+    const summaryPath = path.join(outputDir, 'aggregated_summary.json');
+    try {
+      const summaryContent = await fs.readFile(summaryPath, 'utf-8');
+      return res.json(JSON.parse(summaryContent));
+    } catch {
+      // No pre-computed summary, generate on the fly
+    }
+    
+    // Load all analysis files
+    const files = await fs.readdir(outputDir);
+    const analysisFiles = files.filter(f => f.startsWith('analysis_') && f.endsWith('.json'));
+    
+    if (analysisFiles.length === 0) {
+      return res.json({
+        metadata: { totalCases: 0 },
+        buckets: {},
+        clusters: [],
+        cases: [],
+        message: 'No analyses found. Run batch analysis first.',
+      });
+    }
+    
+    const analyses = [];
+    for (const file of analysisFiles) {
+      try {
+        const content = await fs.readFile(path.join(outputDir, file), 'utf-8');
+        analyses.push(JSON.parse(content));
+      } catch (e) {
+        console.warn(`Warning: Could not read ${file}`);
+      }
+    }
+    
+    // Aggregate and return
+    const aggregated = aggregateAnalyses(analyses);
+    res.json(aggregated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get clusters from aggregated analysis
+ */
+export const getAggregatedClusters = async (req, res, next) => {
+  try {
+    const outputDir = path.join(__dirname, '../../output');
+    const summaryPath = path.join(outputDir, 'aggregated_summary.json');
+    
+    try {
+      const content = await fs.readFile(summaryPath, 'utf-8');
+      const aggregated = JSON.parse(content);
+      return res.json(aggregated.clusters || []);
+    } catch {
+      // Generate on the fly
+      const files = await fs.readdir(outputDir);
+      const analysisFiles = files.filter(f => f.startsWith('analysis_') && f.endsWith('.json'));
+      
+      const analyses = [];
+      for (const file of analysisFiles) {
+        try {
+          const content = await fs.readFile(path.join(outputDir, file), 'utf-8');
+          analyses.push(JSON.parse(content));
+        } catch (e) {
+          // Skip
+        }
+      }
+      
+      const aggregated = aggregateAnalyses(analyses);
+      return res.json(aggregated.clusters || []);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get filterable case list
+ */
+export const getCaseList = async (req, res, next) => {
+  try {
+    const { 
+      issueType, 
+      productArea, 
+      complexity, 
+      sentiment,
+      isBug,
+      minScore,
+      maxScore,
+      keyword,
+    } = req.query;
+    
+    const outputDir = path.join(__dirname, '../../output');
+    const summaryPath = path.join(outputDir, 'aggregated_summary.json');
+    
+    let cases = [];
+    
+    try {
+      const content = await fs.readFile(summaryPath, 'utf-8');
+      const aggregated = JSON.parse(content);
+      cases = aggregated.cases || [];
+    } catch {
+      // Load individual files
+      const files = await fs.readdir(outputDir);
+      const analysisFiles = files.filter(f => f.startsWith('analysis_') && f.endsWith('.json'));
+      
+      for (const file of analysisFiles) {
+        try {
+          const content = await fs.readFile(path.join(outputDir, file), 'utf-8');
+          const analysis = JSON.parse(content);
+          cases.push({
+            caseNumber: analysis.caseNumber,
+            brief: analysis.analysis?.issueSummary?.brief || 'N/A',
+            issueType: analysis.analysis?.tags?.issueType || 'Unknown',
+            resolutionType: analysis.analysis?.tags?.resolutionType || 'Unknown',
+            complexity: analysis.analysis?.tags?.technicalComplexity || 'Unknown',
+            productAreas: analysis.analysis?.tags?.productArea || [],
+            overallScore: analysis.analysis?.qualityAssessment?.overallHandling?.score || 0,
+            sentiment: analysis.analysis?.sentimentAnalysis?.customerSentiment?.overall || 'Unknown',
+            isBug: analysis.analysis?.issueClassification?.isBug?.verdict || false,
+            keywords: analysis.analysis?.clusteringFeatures?.keywords || [],
+          });
+        } catch (e) {
+          // Skip
+        }
+      }
+    }
+    
+    // Apply filters
+    if (issueType) {
+      cases = cases.filter(c => c.issueType === issueType);
+    }
+    if (productArea) {
+      cases = cases.filter(c => c.productAreas?.includes(productArea));
+    }
+    if (complexity) {
+      cases = cases.filter(c => c.complexity === complexity);
+    }
+    if (sentiment) {
+      cases = cases.filter(c => c.sentiment === sentiment);
+    }
+    if (isBug !== undefined) {
+      cases = cases.filter(c => c.isBug === (isBug === 'true'));
+    }
+    if (minScore) {
+      cases = cases.filter(c => c.overallScore >= parseInt(minScore, 10));
+    }
+    if (maxScore) {
+      cases = cases.filter(c => c.overallScore <= parseInt(maxScore, 10));
+    }
+    if (keyword) {
+      const kw = keyword.toLowerCase();
+      cases = cases.filter(c => 
+        c.keywords?.some(k => k.toLowerCase().includes(kw)) ||
+        c.brief?.toLowerCase().includes(kw)
+      );
+    }
+    
+    res.json({
+      total: cases.length,
+      cases,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get single case analysis
+ */
+export const getCaseAnalysis = async (req, res, next) => {
+  try {
+    const { caseNumber } = req.params;
+    const outputDir = path.join(__dirname, '../../output');
+    
+    // Try different file name formats
+    const possibleFiles = [
+      `analysis_${caseNumber}.json`,
+      `analysis_${caseNumber.replace(/^0+/, '')}.json`,
+    ];
+    
+    for (const fileName of possibleFiles) {
+      try {
+        const filePath = path.join(outputDir, fileName);
+        const content = await fs.readFile(filePath, 'utf-8');
+        return res.json(JSON.parse(content));
+      } catch {
+        // Try next
+      }
+    }
+    
+    res.status(404).json({
+      status: 'error',
+      message: `Analysis not found for case ${caseNumber}`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get buckets/breakdowns
+ */
+export const getBuckets = async (req, res, next) => {
+  try {
+    const { dimension } = req.params;
+    const outputDir = path.join(__dirname, '../../output');
+    const summaryPath = path.join(outputDir, 'aggregated_summary.json');
+    
+    try {
+      const content = await fs.readFile(summaryPath, 'utf-8');
+      const aggregated = JSON.parse(content);
+      
+      if (dimension && aggregated.buckets?.[dimension]) {
+        return res.json(aggregated.buckets[dimension]);
+      }
+      
+      return res.json(aggregated.buckets || {});
+    } catch {
+      return res.json({});
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   generateSummary,
   getClusters,
   chat,
   getChatHistory,
+  getAggregatedAnalysis,
+  getAggregatedClusters,
+  getCaseList,
+  getCaseAnalysis,
+  getBuckets,
 };
