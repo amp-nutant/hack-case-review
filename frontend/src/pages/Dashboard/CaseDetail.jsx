@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   FlexLayout,
@@ -16,6 +17,7 @@ import {
 } from '@nutanix-ui/prism-reactjs';
 import { mockCases } from '../../data/mockCases';
 import { Card } from '../../components/common';
+import { KBJiraValidationCards, IdentifiedActionsCard } from '../../components/case';
 
 function CaseDetail() {
   const { reportId, caseId } = useParams();
@@ -78,6 +80,63 @@ function CaseDetail() {
 
   const priority = getPriorityLabel();
 
+  // Callback handlers for validation card actions
+  // These will be connected to backend API calls later
+  const handleUpdateKB = useCallback((data) => {
+    console.log('Update/Attach KB triggered:', data);
+    // TODO: Implement API call to update/attach KB article
+    // POST /api/cases/{caseId}/kb with { suggestedValue: data.suggestedValue, action: 'update' }
+  }, []);
+
+  const handleDraftKB = useCallback((data) => {
+    console.log('Draft KB triggered:', data);
+    // TODO: Implement API call to initiate KB draft workflow
+    // POST /api/cases/{caseId}/kb/draft with case details for KB creation
+  }, []);
+
+  const handleReviewKB = useCallback((data) => {
+    console.log('Review KB triggered:', data);
+    // TODO: Implement API call to initiate KB review workflow
+    // POST /api/cases/{caseId}/kb/review with { currentKB: data.currentValue }
+  }, []);
+
+  const handleUpdateJIRA = useCallback((data) => {
+    console.log('Update JIRA triggered:', data);
+    // TODO: Implement API call to update JIRA ticket
+    // POST /api/cases/{caseId}/jira with { suggestedValue: data.suggestedValue }
+  }, []);
+
+  const handleFixTag = useCallback((data) => {
+    console.log('Fix Tag triggered:', data);
+    // TODO: Implement API call to fix closure tag
+    // POST /api/cases/{caseId}/tag with { suggestedValue: data.suggestedValue }
+  }, []);
+
+  // Callback handlers for identified actions
+  const handleApplyAction = useCallback((action) => {
+    console.log('Apply action triggered:', action);
+    // TODO: Implement API call to apply the action
+    // POST /api/cases/{caseId}/actions/{actionId}/apply
+  }, []);
+
+  const handleRejectAction = useCallback((action) => {
+    console.log('Reject action triggered:', action);
+    // TODO: Implement API call to reject the action
+    // POST /api/cases/{caseId}/actions/{actionId}/reject
+  }, []);
+
+  const handleMarkDoneAction = useCallback((action) => {
+    console.log('Mark done action triggered:', action);
+    // TODO: Implement API call to mark action as done
+    // POST /api/cases/{caseId}/actions/{actionId}/done
+  }, []);
+
+  const handleApplyAllActions = useCallback((actions) => {
+    console.log('Apply all actions triggered:', actions);
+    // TODO: Implement API call to apply all pending actions
+    // POST /api/cases/{caseId}/actions/apply-all
+  }, []);
+
   return (
     <StackingLayout itemGap='L' style={{ padding: '18px' }}>
       {/* Case Header */}
@@ -117,10 +176,10 @@ function CaseDetail() {
         </FlexLayout>
       </FlexLayout>
 
-      {/* Main Content Grid - 80% left, 20% right */}
+      {/* Main Content Grid - 70% left, 30% right */}
       <FlexLayout itemGap='M'>
-        {/* Left Column - 80% */}
-        <FlexItem style={{ flex: '0 0 75%' }}>
+        {/* Left Column - 70% */}
+        <FlexItem style={{ width: '75%', minWidth: 0 }}>
           <StackingLayout itemGap='L'>
             {/* NXpert Analysis Card */}
             <Card highlight="blue">
@@ -130,7 +189,7 @@ function CaseDetail() {
                     <AIIcon />
                     <Title size="h3">NXpert Summary</Title>
                   </FlexLayout>
-                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO}>Powered by NXpert</TextLabel>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.INFO} style={{ fontStyle: 'italic' }} size={TextLabel.TEXT_LABEL_SIZE.SMALL}>Powered by NXpert</TextLabel>
                 </FlexLayout>
                 <Paragraph>{caseData.analysis?.summary || 
                     `This case involves a PE-PC connectivity issue caused by firewall rules blocking port 9440 after firmware upgrade. The root cause is a known issue with firewall configuration persistence during upgrades in AOS 6.5.x. Resolution involves re-applying firewall rules and verifying service status.`
@@ -138,11 +197,34 @@ function CaseDetail() {
                   
               </StackingLayout>
             </Card>
+
+            {/* KB, JIRA, and Closure Tag Validation Cards */}
+            <KBJiraValidationCards
+              kbArticle={caseData.kbArticle}
+              jiraTicket={caseData.jiraTicket}
+              closedTag={caseData.closedTag}
+              onUpdateKB={handleUpdateKB}
+              onDraftKB={handleDraftKB}
+              onReviewKB={handleReviewKB}
+              onUpdateJIRA={handleUpdateJIRA}
+              onFixTag={handleFixTag}
+            />
+
+            {/* Identified Actions Table */}
+            {caseData.identifiedActions && caseData.identifiedActions.length > 0 && (
+              <IdentifiedActionsCard
+                actions={caseData.identifiedActions}
+                onApply={handleApplyAction}
+                onReject={handleRejectAction}
+                onMarkDone={handleMarkDoneAction}
+                onApplyAll={handleApplyAllActions}
+              />
+            )}
           </StackingLayout>
         </FlexItem>
 
         {/* Right Column - 30% */}
-        <FlexItem style={{ flex: '0 0 25%' }}>
+        <FlexItem style={{ width: '25%', minWidth: 0 }}>
           <StackingLayout itemGap="L">
             {/* Case Information Card */}
             <Card>
