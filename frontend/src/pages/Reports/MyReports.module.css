@@ -3,7 +3,7 @@
   min-height: calc(100vh - 56px);
   background: #f8f9fa;
   position: relative;
-  padding: 40px !important;
+  padding: 20px !important;
   box-sizing: border-box;
 }
 
@@ -21,7 +21,6 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
 /* Loading state */
@@ -34,13 +33,20 @@
   padding: 120px 40px;
 }
 
+/* ===== STICKY HEADER WRAPPER ===== */
+.stickyHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #f8f9fa;
+  padding: 12px 0 16px 0;
+}
+
 /* ===== TOP ACTIONS BAR ===== */
 .topActions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: clamp(18px, 2.5vw, 28px);
-  gap: 16px;
   flex-wrap: wrap;
   width: 100%;
   box-sizing: border-box;
@@ -48,87 +54,20 @@
 
 .searchWrap {
   flex: 1;
-  max-width: min(100%, 520px);
-  min-width: min(320px, 50%);
-}
-
-.searchField {
-  position: relative;
-  width: 100%;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #617289;
-  font-size: 3vh;
-  pointer-events: none;
-  line-height: 1;
+  max-width: min(100%, 600px);
+  min-width: min(280px, 50%);
 }
 
 .searchInput {
   width: 100%;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  padding: 0 16px 0 52px;
-  font-size: 14px;
-  color: #111418;
-  outline: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 150ms ease;
-  text-align: center;
-  direction: ltr;
-  line-height: 44px;
-}
-
-.searchInput::placeholder {
-  color: #617289;
-}
-
-.searchInput:hover {
-  background: #ffffff;
-}
-
-.searchInput:focus {
-  border-color: #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(19, 109, 236, 0.1);
-}
-
-.searchClear {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: none;
-  background: #e5e7eb;
-  color: #6b7280;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.searchClear:hover {
-  background: #d1d5db;
 }
 
 /* ===== PAGE HEADER ===== */
 .pageHeader {
-  margin-top: 12px;
-  margin-bottom: clamp(20px, 3vw, 32px);
+  margin-bottom: clamp(8px, 1.5vw, 12px);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
 }
 
 .pageTitle {
@@ -147,6 +86,7 @@
   font-weight: 500;
   line-height: 1.55;
   max-width: 72ch;
+  padding: 5px 0px 10px 0px !important;
 }
 
 /* ===== ERROR BANNER ===== */
@@ -191,7 +131,7 @@
 /* ===== REPORT CARD ===== */
 .reportCard {
   width: 100%;
-  min-height: 280px;
+  min-height: 180px;
   border-radius: 5px;
   background-color: #fff;
   cursor: pointer;
@@ -202,6 +142,27 @@
   box-shadow: 0px 0px 5px gray;
   border-radius: 5px;
   transform: translateY(-1px);
+}
+
+/* ===== PROCESSING CARD ===== */
+.processingCard {
+  min-height: 180px;
+}
+
+.processingContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 16px;
+  height: 100%;
+}
+
+.processingText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #617289;
 }
 
 /* Make Ant Card internals stretch consistently */
@@ -221,16 +182,18 @@
   gap: 12px;
 }
 
-.menuIcon {
-  font-size: 20px;
+.deleteIcon {
+  font-size: 16px;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 4px;
-  transition: background 150ms ease;
+  color: #9ca3af;
+  transition: all 150ms ease;
 }
 
-.menuIcon:hover {
-  background: #f3f4f6;
+.deleteIcon:hover {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 /* ===== ISSUE CHIPS ===== */
@@ -312,7 +275,7 @@
   gap: 6px;
 }
 
-.calendarIcon {
+.dateIcon {
   color: #64748b;
 }
 

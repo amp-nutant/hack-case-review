@@ -45,11 +45,7 @@ body {
   background-color: var(--background-primary);
   color: var(--text-primary);
   line-height: 1.5;
-  min-height: 100vh;
-}
-
-#root {
-  min-height: 100vh;
+  overflow: hidden !important;
 }
 
 /* Typography */
@@ -146,11 +142,6 @@ select {
 /* Prism UI Overrides */
 .ntnx-page {
   background-color: var(--background-primary) !important;
-}
-
-/* Ensure full height for layout */
-.fullHeight {
-  height: 100%;
 }
 
 .flexBox {
