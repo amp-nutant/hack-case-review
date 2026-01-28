@@ -2,8 +2,8 @@
   min-height: calc(100vh - 56px);
   width: 100%;
   max-width: 1400px;
-  margin: 0 auto;
-  padding: 40px 56px 56px;
+  margin: 0 auto !important;
+  padding: 40px 56px 56px !important;
   color: #111827;
 }
 
@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 28px;
+  margin-bottom: 28px !important;
 }
 
 .pageHeaderRow {
@@ -43,7 +43,7 @@
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
-  padding: 24px;
+  padding: 24px !important;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
@@ -51,7 +51,42 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 20px !important;
+}
+
+.cardBody {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 24px !important;
+  width: 100%;
+}
+
+.leftPanel,
+.rightPanel {
+  flex: 1 1 0 !important;
+  min-width: 0;
+}
+
+.panelSubtext {
+  margin-bottom: 16px !important;
+  color: #6b7280 !important;
+}
+
+.sectionDivider {
+  margin: 12px 0 18px !important;
+}
+
+.cardDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  color: #9ca3af !important;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 .cardIcon {
@@ -68,11 +103,11 @@
   background: #fafafa;
   border: 2px dashed #d1d5db;
   border-radius: 12px;
-  padding: 36px 32px;
+  padding: 46px 32px !important;
+  min-height: 190px !important;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  margin-top: 16px;
 }
 
 .dropZone:hover,
@@ -87,8 +122,7 @@
 }
 
 .inputStack {
-  margin-bottom: 20px;
-  gap: 16px;
+  gap: 5px !important;
   display: flex;
   flex-direction: column;
 }
@@ -133,7 +167,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   color: #6b7280;
-  margin-bottom: 8px;
+  margin-bottom: 8px !important;
 }
 
 .textInput {
@@ -147,8 +181,19 @@
 .inputGroup {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 5px !important; 
 }
+
+/* .dateRangeRow {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px !important;
+  width: 100%;
+}
+
+.dateRangeRow :global(.prism-date-picker) {
+  width: 100% !important;
+} */
 
 .inputGroup :global(input),
 .inputGroup :global(textarea) {
@@ -158,9 +203,9 @@
 .alternateNote {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 12px;
+  gap: 12px;
+  margin-top: 16px !important;
+  padding-top: 12px !important;
   border-top: 1px solid #e5e7eb;
 }
 
@@ -188,8 +233,8 @@
 }
 
 .bottomBar {
-  margin-top: 24px;
-  padding: 16px 20px;
+  margin-top: 24px !important;
+  padding: 16px 20px !important;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
@@ -201,11 +246,11 @@
 }
 
 .previewCard {
-  margin-top: 24px;
+  margin-top: 24px !important;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
-  padding: 20px 24px;
+  padding: 20px 24px !important;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
@@ -214,7 +259,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 16px !important;
 }
 
 .previewMeta {
@@ -238,9 +283,53 @@
   gap: 12px;
 }
 
+.previewTable {
+  display: flex;
+  flex-direction: column;
+  gap: 8px !important;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.previewTableHeader,
+.previewTableRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.previewTableHeader {
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.previewTableBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.previewCell {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  word-break: break-word;
+}
+
+.previewTableHeader .previewCell {
+  background: #eef2ff;
+  border-color: #e0e7ff;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
 .previewItem {
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 10px 12px !important; 
+  border-radius: 10px !important  ;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   font-size: 13px;
@@ -278,24 +367,24 @@
 }
 
 .recentSection {
-  margin-top: 28px;
+  margin-top: 28px !important;
 }
 
 .recentGrid {
-  margin-top: 12px;
+  margin-top: 12px !important;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 16px !important;
   width: 100%;
 }
 
 .recentCard {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 14px 16px !important;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 12px !important;
   background: #ffffff;
 }
 
@@ -313,6 +402,15 @@
     align-items: stretch;
   }
 
+  .cardBody {
+    flex-direction: column !important;
+    gap: 18px !important;
+  }
+
+  .cardDivider {
+    padding: 6px 0;
+  }
+
   .recentGrid {
     grid-template-columns: 1fr;
   }
@@ -324,21 +422,21 @@
 
 @media (max-width: 720px) {
   .uploadPage {
-    padding: 24px;
+    padding: 24px !important;
   }
 
   .bottomBar {
-    flex-direction: column;
+    flex-direction: column !important;
     align-items: flex-start;
   }
 
   .actions {
-    width: 100%;
+    width: 100% !important;
     justify-content: flex-end;
   }
 
   .previewHeader {
-    flex-direction: column;
+    flex-direction: column !important;
     align-items: flex-start;
   }
 

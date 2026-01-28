@@ -6,9 +6,13 @@ import {
   TextLabel,
   Button,
   Loader,
-  StackingLayout,
   TextInput,
   TextArea,
+  VerticalSeparator,
+  DatePicker,
+  FlexLayout,
+  FlexItem,
+  Divider,
 } from '@nutanix-ui/prism-reactjs';
 import * as XLSX from 'xlsx';
 import { uploadReport } from '../../redux/slices/reportsSlice';
@@ -19,7 +23,12 @@ function UploadData() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [reportName, setReportName] = useState('');
   const [reportDescription, setReportDescription] = useState('');
-  const [caseNumbers, setCaseNumbers] = useState([]);
+  const [reportComponent, setReportComponent] = useState('');
+  const [dateRangeStart, setDateRangeStart] = useState(null);
+  const [dateRangeEnd, setDateRangeEnd] = useState(null);
+  const [accountName, setAccountName] = useState('');
+  const [previewHeaders, setPreviewHeaders] = useState([]);
+  const [previewRows, setPreviewRows] = useState([]);
   const [isParsing, setIsParsing] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const fileInputRef = useRef(null);
@@ -70,8 +79,8 @@ function UploadData() {
 
   const canProceed = Boolean(selectedFile);
   const showPreview = Boolean(selectedFile);
-  const previewLimit = 12;
-  const previewCases = caseNumbers.slice(0, previewLimit);
+  const previewRowLimit = 5;
+  const previewSampleRows = previewRows.slice(0, previewRowLimit);
 
   const parseCsvRows = (text) => {
     const rows = [];
@@ -111,25 +120,10 @@ function UploadData() {
     return rows;
   };
 
-  const extractCaseNumbers = (rows) => {
-    if (!rows.length) return [];
-    const headerRow = rows[0].map((value) => String(value).trim());
-    const caseIndex = headerRow.findIndex(
-      (header) => header.toLowerCase() === 'case number',
-    );
-    if (caseIndex === -1) return [];
-
-    const values = rows
-      .slice(1)
-      .map((row) => String(row[caseIndex] ?? '').trim())
-      .filter(Boolean);
-
-    return Array.from(new Set(values));
-  };
-
   useEffect(() => {
     if (!selectedFile) {
-      setCaseNumbers([]);
+      setPreviewHeaders([]);
+      setPreviewRows([]);
       setPreviewError('');
       setIsParsing(false);
       return;
@@ -158,14 +152,19 @@ function UploadData() {
           throw new Error('Unsupported file type');
         }
 
-        const extracted = extractCaseNumbers(rows);
-        if (!extracted.length) {
-          setPreviewError('No "Case Number" field found in the uploaded file.');
+        if (rows.length > 0) {
+          const headerRow = rows[0].map((value) => String(value ?? '').trim());
+          const dataRows = rows.slice(1);
+          setPreviewHeaders(headerRow);
+          setPreviewRows(dataRows);
+        } else {
+          setPreviewHeaders([]);
+          setPreviewRows([]);
         }
-        setCaseNumbers(extracted);
       } catch {
-        setPreviewError('Unable to read case numbers from this file.');
-        setCaseNumbers([]);
+        setPreviewError('Unable to read rows from this file.');
+        setPreviewHeaders([]);
+        setPreviewRows([]);
       } finally {
         setIsParsing(false);
       }
@@ -173,7 +172,8 @@ function UploadData() {
 
     reader.onerror = () => {
       setPreviewError('Unable to read this file.');
-      setCaseNumbers([]);
+      setPreviewHeaders([]);
+      setPreviewRows([]);
       setIsParsing(false);
     };
 
@@ -188,7 +188,9 @@ function UploadData() {
     <div className={styles.uploadPage}>
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderRow}>
-          <Title size="h2" className={styles.pageTitle}>Create New Report</Title>
+          <Title size="h2" className={styles.pageTitle}>
+            Create New Report
+          </Title>
           <Button type="primary" onClick={() => navigate('/reports')}>
             My Reports
           </Button>
@@ -203,77 +205,128 @@ function UploadData() {
           <div className={styles.cardHeader}>
             <div className={styles.cardIcon}>📤</div>
             <div>
-              <Title size="h4">Upload CSV File</Title>
-              <TextLabel type="secondary">Import local data from your computer.</TextLabel>
+              <Title size="h3">Select Data Source</Title>
+              <TextLabel type="secondary">Choose how you want to create this report.</TextLabel>
             </div>
           </div>
 
-          <StackingLayout itemSpacing="16px" className={styles.inputStack}>
-            <div className={styles.inputGroup}>
-              <TextLabel className={styles.inputLabel}>NAME</TextLabel>
-              <TextInput
-                className={styles.textInput}
-                value={reportName}
-                onChange={(e) => setReportName(e.target.value)}
-                placeholder="Add a report name"
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <TextLabel className={styles.inputLabel}>DESCRIPTION</TextLabel>
-              <TextArea
-                className={styles.textInput}
-                value={reportDescription}
-                onChange={(e) => setReportDescription(e.target.value)}
-                placeholder="Add a short description"
-                rows={3}
-              />
-            </div>
-          </StackingLayout>
+          <FlexLayout>
+            <FlexItem className={styles.leftPanel}>
+              <Title size="h2">Fetch Cases</Title>
+              <TextLabel type="secondary">
+                Use filters to pull cases directly
+              </TextLabel>
+              <Divider className={styles.sectionDivider} />
+              <FlexLayout alignItems="stretch" flexDirection='column' className={styles.inputStack}>
+                <FlexItem className={styles.inputGroup}>
+                  <TextLabel className={styles.inputLabel}>Name</TextLabel>
+                  <TextInput
+                    className={styles.textInput}
+                    value={reportName}
+                    onChange={e => setReportName(e.target.value)}
+                    placeholder="Add a report name"
+                  />
+                </FlexItem>
+                <FlexItem className={styles.inputGroup}>
+                  <TextLabel className={styles.inputLabel}>Description</TextLabel>
+                  <TextArea
+                    className={styles.textInput}
+                    value={reportDescription}
+                    onChange={e => setReportDescription(e.target.value)}
+                    placeholder="Add a short description"
+                    rows={3}
+                  />
+                </FlexItem>
+                <FlexItem className={styles.inputGroup}>
+                  <TextLabel className={styles.inputLabel}>Component</TextLabel>
+                  <TextInput
+                    className={styles.textInput}
+                    value={reportComponent}
+                    onChange={e => setReportComponent(e.target.value)}
+                    placeholder="e.g. Storage, Networking"
+                  />
+                </FlexItem>
+                <FlexItem className={styles.inputGroup}>
+                  <TextLabel className={styles.inputLabel}>Date Range</TextLabel>
+                  <FlexLayout alignItems="stretch" itemSpacing="15px" className={styles.inputStack}>
+                    <DatePicker
+                      oldDatePicker={false}
+                      onChange={date => setDateRangeStart(date)}
+                      value={dateRangeStart}
+                    />
+                    <DatePicker
+                      oldDatePicker={false}
+                      onChange={date => setDateRangeEnd(date)}
+                      value={dateRangeEnd}
+                    />
+                  </FlexLayout>
+                </FlexItem>
+                <FlexItem className={styles.inputGroup}>
+                  <TextLabel className={styles.inputLabel}>Account</TextLabel>
+                  <TextInput
+                    className={styles.textInput}
+                    value={accountName}
+                    onChange={e => setAccountName(e.target.value)}
+                    placeholder="Search account name"
+                  />
+                  </FlexItem>
+              </FlexLayout>
+            </FlexItem>
 
-          <div
-            className={`${styles.dropZone} ${dragActive ? styles.active : ''} ${selectedFile ? styles.hasFile : ''}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={handleBrowseClick}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.xlsx,.xls,.json"
-              onChange={handleFileSelect}
-              className={styles.fileInput}
-            />
+            <VerticalSeparator size="large" />
 
-            {selectedFile ? (
-              <div className={styles.dropContent}>
-                <span className={styles.fileIcon}>📄</span>
-                <TextLabel className={styles.fileName}>{selectedFile.name}</TextLabel>
-                <TextLabel type="secondary">
-                  {(selectedFile.size / 1024).toFixed(2)} KB
-                </TextLabel>
+            <FlexItem className={styles.rightPanel}>
+              <Title size="h2">Upload CSV File</Title>
+              <TextLabel type="secondary" className={styles.panelSubtext}>
+                Import local data from your computer.
+              </TextLabel>
+              <Divider className={styles.sectionDivider} />
+              <div
+                className={`${styles.dropZone} ${dragActive ? styles.active : ''} ${selectedFile ? styles.hasFile : ''}`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                onClick={handleBrowseClick}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls,.json"
+                  onChange={handleFileSelect}
+                  className={styles.fileInput}
+                />
+
+                {selectedFile ? (
+                  <div className={styles.dropContent}>
+                    <span className={styles.fileIcon}>📄</span>
+                    <TextLabel className={styles.fileName}>{selectedFile.name}</TextLabel>
+                    <TextLabel type="secondary">
+                      {(selectedFile.size / 1024).toFixed(2)} KB
+                    </TextLabel>
+                  </div>
+                ) : (
+                  <div className={styles.dropContent}>
+                    <span className={styles.uploadIcon}>☁️</span>
+                    <TextLabel>Drag and drop file here</TextLabel>
+                    <TextLabel type="secondary">
+                      or <span className={styles.browseLink}>Browse files</span>
+                    </TextLabel>
+                    <TextLabel type="secondary" className={styles.supportedFormats}>
+                      MAXIMUM SIZE: 50MB
+                    </TextLabel>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className={styles.dropContent}>
-                <span className={styles.uploadIcon}>☁️</span>
-                <TextLabel>Drag and drop file here</TextLabel>
-                <TextLabel type="secondary">
-                  or <span className={styles.browseLink}>Browse files</span>
-                </TextLabel>
-                <TextLabel type="secondary" className={styles.supportedFormats}>
-                  MAXIMUM SIZE: 50MB
-                </TextLabel>
-              </div>
-            )}
-          </div>
 
-          <div className={styles.alternateNote}>
-            <span className={styles.infoIcon}>i</span>
-            <TextLabel type="secondary">
-              You can also connect using a Salesforce Report ID from your instance.
-            </TextLabel>
-          </div>
+              {/* <div className={styles.alternateNote}>
+                <span className={styles.infoIcon}>i</span>
+                <TextLabel type="secondary">
+                  You can also connect using a Salesforce Report ID from your instance.
+                </TextLabel>
+              </div> */}
+            </FlexItem>
+          </FlexLayout>
         </div>
       </div>
 
@@ -287,9 +340,9 @@ function UploadData() {
               </TextLabel>
             </div>
             <TextLabel className={styles.previewMeta}>
-              {caseNumbers.length
-                ? `Showing ${previewCases.length} of ${caseNumbers.length}`
-                : 'No case numbers found'}
+              {previewRows.length
+                ? `Showing ${previewSampleRows.length} of ${previewRows.length} rows`
+                : 'No preview rows found'}
             </TextLabel>
           </div>
           {isParsing && (
@@ -302,12 +355,28 @@ function UploadData() {
             <TextLabel className={styles.previewError}>{previewError}</TextLabel>
           )}
           {!isParsing && !previewError && (
-            <div className={styles.previewList}>
-              {previewCases.map((caseId) => (
-                <div key={caseId} className={styles.previewItem}>
-                  {caseId}
-                </div>
-              ))}
+            <div className={styles.previewTable}>
+              <div className={styles.previewTableHeader}>
+                {previewHeaders.map((header) => (
+                  <div key={header} className={styles.previewCell}>
+                    {header || 'Field'}
+                  </div>
+                ))}
+              </div>
+              <div className={styles.previewTableBody}>
+                {previewSampleRows.map((row, rowIndex) => (
+                  <div key={`row-${rowIndex}`} className={styles.previewTableRow}>
+                    {previewHeaders.map((header, colIndex) => (
+                      <div
+                        key={`${header}-${rowIndex}-${colIndex}`}
+                        className={styles.previewCell}
+                      >
+                        {String(row[colIndex] ?? '')}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -325,11 +394,7 @@ function UploadData() {
           <Button type="secondary" onClick={() => navigate('/reports')}>
             Cancel
           </Button>
-          <Button
-            type="primary"
-            onClick={handleUpload}
-            disabled={!canProceed || uploading}
-          >
+          <Button type="primary" onClick={handleUpload} disabled={!canProceed || uploading}>
             {uploading ? (
               <span className={styles.loaderInline}>
                 <Loader size="small" />
@@ -355,7 +420,7 @@ function UploadData() {
             { name: 'Q4_Support_Cases.csv', meta: 'Uploaded 2h ago', type: 'csv' },
             { name: 'Critical High-Priority (SF)', meta: 'Fetched Yesterday', type: 'sf' },
             { name: 'Customer_Feedback_2023.csv', meta: 'Uploaded 3d ago', type: 'csv' },
-          ].map((source) => (
+          ].map(source => (
             <div key={source.name} className={styles.recentCard}>
               <div className={styles.recentIcon}>{source.type === 'sf' ? '🗄️' : '📄'}</div>
               <div>
