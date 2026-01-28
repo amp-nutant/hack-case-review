@@ -2,293 +2,170 @@
 .page {
   min-height: calc(100vh - 56px);
   background: #f8f9fa;
-  position: relative;
-  padding: 20px !important;
+  padding: 24px;
   box-sizing: border-box;
 }
-
-/* Removed gradient overlays to match main page background */
 
 .container {
-  margin: 0 auto;
-  width: 100%;
-  position: relative;
-  box-sizing: border-box;
-}
-
-.reportsPage {
   width: 100%;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
 }
 
 /* Loading state */
 .loadingContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 120px 40px;
-}
-
-/* ===== STICKY HEADER WRAPPER ===== */
-.stickyHeader {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #f8f9fa;
-  padding: 12px 0 16px 0;
-}
-
-/* ===== TOP ACTIONS BAR ===== */
-.topActions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.searchWrap {
-  flex: 1;
-  max-width: min(100%, 600px);
-  min-width: min(280px, 50%);
-}
-
-.searchInput {
-  width: 100%;
-}
-
-/* ===== PAGE HEADER ===== */
-.pageHeader {
-  margin-bottom: clamp(8px, 1.5vw, 12px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pageTitle {
-  font-size: clamp(28px, 3.5vw, 36px);
-  font-weight: 900;
-  color: #111418;
-  margin: 0;
-  letter-spacing: -0.025em;
-  line-height: 1.25;
-}
-
-.pageSubtitle {
-  font-size: clamp(14px, 1.5vw, 16px);
-  color: #617289;
-  margin: 0;
-  font-weight: 500;
-  line-height: 1.55;
-  max-width: 72ch;
-  padding: 5px 0px 10px 0px !important;
+  min-height: 400px;
 }
 
 /* ===== ERROR BANNER ===== */
 .errorBanner {
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 16px 20px;
-  margin-bottom: 20px;
   color: #dc2626;
   font-size: 14px;
-  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
 }
 
 /* ===== EMPTY STATE ===== */
 .emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 100px 40px;
-  text-align: center;
-}
-
-.emptyIcon {
-  font-size: 56px;
-  opacity: 0.5;
+  padding: 80px 40px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #edf0f2;
 }
 
 /* ===== REPORTS GRID ===== */
 .reportsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-  padding: 20px;
-  background: #f4f5f6;
-  border-radius: 12px;
-  align-items: stretch;
 }
 
 /* ===== REPORT CARD ===== */
 .reportCard {
-  width: 100%;
-  min-height: 180px;
-  border-radius: 5px;
-  background-color: #fff;
+  background: #fff;
+  border: 2px solid #edf0f2;
+  border-radius: 8px;
+  padding: 16px;
   cursor: pointer;
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
 }
 
-.reportCard:hover {
-  box-shadow: 0px 0px 5px gray;
-  border-radius: 5px;
-  transform: translateY(-1px);
+.reportCard:hover,
+.reportCardHovered {
+  border-color: #1b6dc6;
+  box-shadow: 0 4px 12px rgba(34, 165, 247, 0.15);
 }
 
-/* ===== PROCESSING CARD ===== */
-.processingCard {
-  min-height: 180px;
+/* Processing card - not clickable, yellow highlight */
+.reportCardProcessing {
+  cursor: default;
 }
 
-.processingContent {
+.reportCardProcessing:hover,
+.reportCardProcessing.reportCardHovered {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+/* Processing content area - centers the loader with fixed height to match other cards */
+.processingContentArea {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 24px 16px;
-  height: 100%;
+  height: 90px;
 }
 
-.processingText {
-  font-size: 14px;
-  font-weight: 500;
-  color: #617289;
+/* Fetching card - not clickable while fetching */
+.reportCardFetching {
+  cursor: wait;
+  pointer-events: none;
+  position: relative;
 }
 
-/* Make Ant Card internals stretch consistently */
-.reportCard :global(.ant-card-body) {
-  height: 100%;
-}
-
-.reportCard :global(.ant-card-head-title) {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cardExtra {
+/* Fetching overlay - covers the card with loading state */
+.fetchingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  z-index: 10;
 }
 
-.deleteIcon {
-  font-size: 16px;
-  cursor: pointer;
+/* ===== REPORT ICON ===== */
+.reportIconWrapper {
+  width: 40px;
+  height: 40px;
+  background: #e9f6fe;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1b6dc6;
+}
+
+/* Processing icon - yellow */
+.reportIconWrapperProcessing {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+/* ===== DELETE BUTTON ===== */
+.deleteButton {
   padding: 6px;
   border-radius: 4px;
   color: #9ca3af;
-  transition: all 150ms ease;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.deleteIcon:hover {
+.deleteButton:hover {
   background: #fef2f2;
   color: #dc2626;
 }
 
-/* ===== ISSUE CHIPS ===== */
-.issueChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+/* ===== REPORT NAME ===== */
+.reportName {
+  transition: color 0.2s ease;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111418;
+  line-height: 1.2;
+  display: block;
+  max-width: 100%;
 }
 
-.issueChip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  border: 1px solid;
+.reportNameHovered {
+  color: #22a5f7;
 }
 
-/* Distinct colors matching reference */
-.issueChipBlue {
-  background: #eff6ff;
-  color: #1e40af;
-  border-color: #dbeafe;
-}
-
-.issueChipPurple {
-  background: #faf5ff;
-  color: #6b21a8;
-  border-color: #e9d5ff;
-}
-
-.issueChipPink {
-  background: #fdf2f8;
-  color: #9f1239;
-  border-color: #fce7f3;
-}
-
-.issueChipOrange {
-  background: #fff7ed;
-  color: #9a3412;
-  border-color: #fed7aa;
-}
-
-.issueChipGreen {
-  background: #f0fdf4;
-  color: #065f46;
-  border-color: #d1fae5;
-}
-
-.issueChipTeal {
-  background: #f0fdfa;
-  color: #115e59;
-  border-color: #ccfbf1;
-}
-
-.issueChipIndigo {
-  background: #eef2ff;
-  color: #3730a3;
-  border-color: #e0e7ff;
-}
-
-.issueChipRed {
-  background: #fef2f2;
-  color: #991b1b;
-  border-color: #fee2e2;
-}
-
-.issueChipGray {
-  background: #f9fafb;
-  color: #475569;
-  border-color: #e5e7eb;
-}
-
-/* ===== DATE WRAPPER ===== */
-.dateWrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+/* ===== DATE ICON ===== */
 .dateIcon {
-  color: #64748b;
+  color: #9ca3af;
+}
+
+/* ===== CARD ACTIONS (Hover Buttons) ===== */
+.cardActions {
+  padding-top: 12px;
+  margin-top: 4px;
 }
 
 /* ===== MOBILE OPTIMIZATIONS ===== */
 @media (max-width: 640px) {
-  .searchWrap {
-    min-width: 0;
-    max-width: 100%;
+  .page {
+    padding: 16px;
   }
 
   .reportsGrid {
     grid-template-columns: 1fr;
-    padding: 14px;
     gap: 12px;
   }
 }

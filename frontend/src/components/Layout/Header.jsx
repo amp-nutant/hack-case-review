@@ -10,19 +10,20 @@ import {
   StackingLayout,
   Link,
   VerticalSeparator,
+  Title,
 } from '@nutanix-ui/prism-reactjs';
 import styles from './Header.module.css';
 
 // Mock user data - in production this would come from auth context/redux
 const mockUser = {
-  name: 'John Doe',
+  name: 'Ashish MP',
   email: 'john.doe@nutanix.com',
 };
 
 // Config for microfrontend integration
 const config = {
   showHeader: true,
-  appTitle: 'Case Review',
+  appTitle: 'Serviceability Copilot',
   environment: 'DEV', // Set to 'PROD' in production
 };
 
@@ -44,14 +45,15 @@ function Header() {
     <Link onClick={handleLogoClick} className={styles.nutanixLogoContainer}>
       <StackingLayout className={styles.nutanixLogo}>
         <NutanixLogoIcon className={styles.headerNtnxLogo} />
-        <p className="ntnx-title">{config.appTitle}</p>
+        {/* <p className="ntnx-title">{config.appTitle}</p> */}
+        <Title size="h2" style={{ color: '#fff' }}>{config.appTitle}</Title>
       </StackingLayout>
     </Link>
   );
 
   // Account info section with user name and logout
   const accountInfo = (
-    <FlexLayout alignItems="center" itemSpacing="10px">
+    <FlexLayout alignItems="center" itemGap="S">
       <span className={styles.userName}>{mockUser.name}</span>
       <PowerIcon
         onClick={handleLogout}
