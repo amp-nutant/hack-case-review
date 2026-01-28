@@ -8,6 +8,18 @@ const getAuthHeader = () => {
   return token ? `Bearer ${token}` : '';
 };
 
+export const parseLLMJSONResponse = (response) => {
+  try {
+    const content = response.content || response.text;
+    // Clean up potential markdown code blocks
+    const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error('Error parsing LLM JSON response:', error);
+    return {};
+  }
+};
+
 export const invokeLLMAPI = async ({ systemPrompt, userPrompt, maxTokens = 4096, temperature = 0.7 }) => {
   if (!LLM_API_URL) {
     throw new Error('LLM_API_URL is not configured');

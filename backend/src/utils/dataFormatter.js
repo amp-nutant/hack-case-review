@@ -57,17 +57,3 @@ export function cleanHtmlForLLM(html) {
   
   return cleaned;
 }
-
-export const getKBArticles = async (articleNumbers) => {
-  const result = await query(
-    `SELECT title, summary, solution__c, description__c FROM sfdc.knowledge_base__kav WHERE articleNumber IN ($1)`,
-    [articleNumbers.join(',')],
-  );
-
-  return result.rows.map(({ title, summary, solution__c, description__c }) => ({
-    title,
-    summary,
-    solution: cleanHtmlForLLM(solution__c),
-    description: cleanHtmlForLLM(description__c),
-  }));
-};

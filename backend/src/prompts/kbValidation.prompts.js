@@ -1,6 +1,3 @@
-import { invokeLLMAPI } from './llm.service.js';
-import { cleanHtmlForLLM } from './kbQuery.service.js';
-
 /**
  * System prompt for KB relevance evaluation
  */
@@ -19,35 +16,12 @@ Guidelines:
 - Always respond in valid JSON format only, no markdown code blocks`;
 
 /**
- * Build case context from case data for KB relevance checking
- */
-export function buildCaseContext(caseData) {
-  const caseInfo = caseData.caseInfo || caseData;
-  const resolution = caseData.resolution || {};
-  const tags = caseData.tags || {};
-
-  return {
-    subject: caseInfo.subject,
-    description: cleanHtmlForLLM(caseInfo.description),
-    resolutionNotes: resolution.resolutionNotes || resolution.resolution__c,
-    product: caseInfo.product || caseInfo.product_type__c,
-    nosVersion: caseInfo.nosVersion || caseInfo.nos_version_snapshot__c,
-    skill: caseInfo.skill || caseInfo.skill__c,
-    tags: [
-      ...(tags.openTags || []),
-      ...(tags.closeTags || []),
-    ].filter(Boolean),
-  };
-}
-
-/**
  * Build prompt for single KB relevance check
  */
-function buildSingleKBRelevancePrompt(kb, caseContext) {
+function buildSingleKBRelevanceUserPrompt(kb, caseContext) {
   return `Evaluate if the following Knowledge Base article is relevant to the support case.
 
 ## Knowledge Base Article
-**KB ID:** ${kb.id || kb.articleNumber || 'N/A'}
 **Title:** ${kb.title}
 **Summary:** ${kb.summary || 'Not provided'}
 **Solution:** ${kb.solution?.substring(0, 2000) || 'Not provided'}
@@ -64,7 +38,7 @@ function buildSingleKBRelevancePrompt(kb, caseContext) {
 ${caseContext.description?.substring(0, 2000) || 'Not provided'}
 
 **Resolution Notes:**
-${caseContext.resolutionNotes?.substring(0, 1000) || 'Not yet resolved'}
+${caseContext.resolutionNotes?.substring(0, 1000) || ''}
 
 ## Evaluation Criteria
 Rate the KB article's relevance based on:
@@ -94,7 +68,7 @@ Respond in JSON format only:
 /**
  * Build prompt for batch KB relevance check (multiple KBs)
  */
-function buildBatchKBRelevancePrompt(kbList, caseContext) {
+function buildBatchKBRelevanceUserPrompt(kbList, caseContext) {
   const kbSection = kbList.map((kb, index) => `
 ### KB ${index + 1}
 **KB ID:** ${kb.id || kb.articleNumber || `KB-${index + 1}`}
@@ -141,7 +115,7 @@ Return a JSON object. Include ALL evaluated KBs with their scores.
 {
   "caseSubject": "<first 50 chars of subject>",
   "evaluatedCount": ${kbList.length},
-  "relevantKBs": [
+  "kbScoresAndRecommendations": [
     {
       "kbId": "<kb_id>",
       "kbTitle": "<kb_title>",
@@ -156,121 +130,8 @@ Return a JSON object. Include ALL evaluated KBs with their scores.
 }`;
 }
 
-/**
- * Check relevance of a single KB article against a case
- */
-export async function checkSingleKBRelevance(kb, caseContext) {
-  const prompt = buildSingleKBRelevancePrompt(kb, caseContext);
-
-  const response = await invokeLLMAPI({
-    systemPrompt: KB_RELEVANCE_SYSTEM_PROMPT,
-    userPrompt: prompt,
-    temperature: 0.2, // Low temperature for consistent evaluation
-    maxTokens: 1024,
-  });
-
-  try {
-    const content = response.content || response.text;
-    // Clean up potential markdown code blocks
-    const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
-    const result = JSON.parse(jsonStr);
-
-    return {
-      ...result,
-      usage: response.usage,
-    };
-  } catch (parseError) {
-    console.error('Failed to parse KB relevance response:', parseError);
-    console.error('Raw response:', response.content || response.text);
-    throw new Error('Failed to parse LLM response as JSON');
-  }
-}
-
-/**
- * Check relevance of multiple KB articles against a case (batch)
- */
-export async function checkBatchKBRelevance(kbList, caseContext) {
-  if (!kbList || kbList.length === 0) {
-    return {
-      caseSubject: caseContext.subject?.substring(0, 50),
-      evaluatedCount: 0,
-      relevantKBs: [],
-      summary: 'No KB articles provided for evaluation.',
-    };
-  }
-
-  // For single KB, use the single method for more detailed response
-  if (kbList.length === 1) {
-    const result = await checkSingleKBRelevance(kbList[0], caseContext);
-    return {
-      caseSubject: caseContext.subject?.substring(0, 50),
-      evaluatedCount: 1,
-      relevantKBs: [result],
-      summary: result.isRelevant
-        ? `Found 1 relevant KB: ${result.kbTitle}`
-        : 'The provided KB article is not relevant to this case.',
-      usage: result.usage,
-    };
-  }
-
-  const prompt = buildBatchKBRelevancePrompt(kbList, caseContext);
-
-  const response = await invokeLLMAPI({
-    systemPrompt: KB_RELEVANCE_SYSTEM_PROMPT,
-    userPrompt: prompt,
-    temperature: 0.2,
-    maxTokens: 2048,
-  });
-
-  try {
-    const content = response.content || response.text;
-    const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
-    const result = JSON.parse(jsonStr);
-
-    return {
-      ...result,
-      usage: response.usage,
-    };
-  } catch (parseError) {
-    console.error('Failed to parse batch KB relevance response:', parseError);
-    console.error('Raw response:', response.content || response.text);
-    throw new Error('Failed to parse LLM response as JSON');
-  }
-}
-
-/**
- * Main function to check KB relevance
- * Automatically chooses single or batch based on input
- */
-export async function checkKBRelevance(kbArticles, caseData, options = {}) {
-  const { threshold = 40 } = options;
-
-  // Build case context
-  const caseContext = buildCaseContext(caseData);
-
-  // Check relevance
-  const result = await checkBatchKBRelevance(kbArticles, caseContext);
-
-  // Filter by threshold if requested
-  if (threshold > 0 && result.relevantKBs) {
-    result.relevantKBs = result.relevantKBs.filter(
-      kb => kb.relevanceScore >= threshold
-    );
-    result.filteredByThreshold = threshold;
-  }
-
-  // Sort by relevance score descending
-  if (result.relevantKBs) {
-    result.relevantKBs.sort((a, b) => b.relevanceScore - a.relevanceScore);
-  }
-
-  return result;
-}
-
-export default {
-  checkKBRelevance,
-  checkSingleKBRelevance,
-  checkBatchKBRelevance,
-  buildCaseContext,
+export {
+  KB_RELEVANCE_SYSTEM_PROMPT,
+  buildSingleKBRelevanceUserPrompt,
+  buildBatchKBRelevanceUserPrompt,
 };
-
