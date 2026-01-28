@@ -17,7 +17,13 @@ import {
 } from '@nutanix-ui/prism-reactjs';
 import { mockCases } from '../../data/mockCases';
 import { Card } from '../../components/common';
-import { KBJiraValidationCards, IdentifiedActionsCard } from '../../components/case';
+import { 
+  KBJiraValidationCards, 
+  IdentifiedActionsCard,
+  AssociatedIssuesCard,
+  ActionsTakenCard,
+  DescriptionCard,
+} from '../../components/case';
 
 function CaseDetail() {
   const { reportId, caseId } = useParams();
@@ -220,12 +226,21 @@ function CaseDetail() {
                 onApplyAll={handleApplyAllActions}
               />
             )}
+
+            {/* Associated Issues Card */}
+            <AssociatedIssuesCard issues={caseData.issues} />
+
+            {/* Actions Taken Card */}
+            <ActionsTakenCard actionsTaken={caseData.actionsTaken} />
           </StackingLayout>
         </FlexItem>
 
         {/* Right Column - 30% */}
         <FlexItem style={{ width: '25%', minWidth: 0 }}>
           <StackingLayout itemGap="L">
+            {/* Description Card */}
+            <DescriptionCard description={caseData.description} />
+
             {/* Case Information Card */}
             <Card>
               <StackingLayout itemGap="M" style={{ padding: '12px' }}>

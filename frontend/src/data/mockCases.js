@@ -65,6 +65,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.1',
+    description: 'Customer reported cluster connectivity issues following a firmware upgrade. The Prism Central dashboard became unresponsive and PE-PC connection was intermittently failing. Logs showed timeout errors on port 9440.',
     closedTag: {
       value: 'Prism Central - Others',
       status: ValidationStatus.WRONG,
@@ -83,6 +84,12 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Outdated KB article'],
     createdAt: '2026-01-14T08:30:00Z',
     closedAt: '2026-01-20T16:45:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-14T09:15:00Z', description: 'Initial triage completed. Reviewed cluster logs and identified connectivity timeouts.' },
+      { timestamp: '2026-01-15T14:30:00Z', description: 'Engaged customer to gather additional network configuration details. Confirmed firewall rules were reset after upgrade.' },
+      { timestamp: '2026-01-17T10:00:00Z', description: 'Provided customer with steps to re-apply firewall rules for port 9440.' },
+      { timestamp: '2026-01-20T16:00:00Z', description: 'Customer confirmed connectivity restored after applying firewall rules. Case resolved.' },
+    ],
     identifiedActions: [
       {
         id: 'action-001-1',
@@ -117,6 +124,7 @@ export const mockCases = [
     aosVersion: '6.5.1',
     hypervisorVersion: 'AHV 20220304.336',
     pcVersion: 'pc.2024.1',
+    description: 'Customer experiencing VM migration failures with storage-related errors. The migration process starts but fails midway with error code indicating insufficient storage capacity on the target node.',
     closedTag: {
       value: 'Prism Central - CMSP',
       status: ValidationStatus.VALID,
@@ -134,6 +142,12 @@ export const mockCases = [
     issues: ['Missing KB article'],
     createdAt: '2026-01-20T10:15:00Z',
     closedAt: '2026-01-24T14:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-20T11:00:00Z', description: 'Reviewed migration logs and identified storage capacity errors on target node.' },
+      { timestamp: '2026-01-21T09:30:00Z', description: 'Requested storage utilization report from customer. Confirmed target node at 92% capacity.' },
+      { timestamp: '2026-01-22T15:00:00Z', description: 'Guided customer through storage rebalancing procedure to free up space on target node.' },
+      { timestamp: '2026-01-24T14:00:00Z', description: 'Migration completed successfully after storage cleanup. Recommended capacity monitoring.' },
+    ],
     identifiedActions: [
       {
         id: 'action-002-1',
@@ -168,6 +182,7 @@ export const mockCases = [
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'ESXi 7.0 U3',
     pcVersion: 'pc.2024.2',
+    description: 'Customer reported slow loading times on the Prism Central dashboard. Pages taking 30+ seconds to load. Performance issues started after recent cluster expansion.',
     closedTag: {
       value: 'Prism Central - Upgrade',
       status: ValidationStatus.WRONG,
@@ -186,6 +201,11 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Missing JIRA ticket'],
     createdAt: '2026-01-25T11:45:00Z',
     closedAt: '2026-01-27T09:20:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-25T13:00:00Z', description: 'Collected PC performance metrics. Identified memory utilization at 95% on PC VM.' },
+      { timestamp: '2026-01-26T10:30:00Z', description: 'Recommended increasing PC VM memory allocation from 24GB to 32GB.' },
+      { timestamp: '2026-01-27T08:00:00Z', description: 'Customer applied memory upgrade. Dashboard response time improved to under 3 seconds.' },
+    ],
     identifiedActions: [
       {
         id: 'action-003-1',
@@ -227,6 +247,7 @@ export const mockCases = [
     aosVersion: '6.5.0',
     hypervisorVersion: 'AHV 20220304.330',
     pcVersion: 'pc.2024.1',
+    description: 'Customer backup jobs failing with permission denied errors. LDAP authentication issues causing service account to lose permissions after password rotation.',
     closedTag: {
       value: 'Prism Central - LDAP',
       status: ValidationStatus.VALID,
@@ -242,6 +263,12 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-10T09:00:00Z',
     closedAt: '2026-01-15T11:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-10T10:00:00Z', description: 'Analyzed backup logs. Identified LDAP authentication failures for service account.' },
+      { timestamp: '2026-01-12T14:00:00Z', description: 'Confirmed with customer that service account password was recently rotated.' },
+      { timestamp: '2026-01-14T09:00:00Z', description: 'Guided customer through updating service account credentials in backup configuration.' },
+      { timestamp: '2026-01-15T11:00:00Z', description: 'Verified backup jobs completed successfully. Issue resolved.' },
+    ],
     identifiedActions: [
       {
         id: 'action-004-1',
@@ -262,6 +289,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.2',
+    description: 'Customer experiencing alert storm with hundreds of alerts generated from multiple hosts. Investigation revealed temporary network congestion that resolved itself.',
     closedTag: {
       value: 'Prism Central - App Monitoring/Xstream',
       status: ValidationStatus.VALID,
@@ -281,6 +309,11 @@ export const mockCases = [
     issues: ['Wrong KB article', 'Wrong JIRA ticket'],
     createdAt: '2026-01-22T14:00:00Z',
     closedAt: '2026-01-25T16:45:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-22T15:00:00Z', description: 'Reviewed alert history and patterns. Identified network-related alerts from multiple hosts.' },
+      { timestamp: '2026-01-23T10:00:00Z', description: 'Customer confirmed network maintenance was performed during alert timeframe.' },
+      { timestamp: '2026-01-25T14:00:00Z', description: 'Alerts stopped after network stabilized. Issue self-resolved.' },
+    ],
     identifiedActions: [
       {
         id: 'action-005-1',
@@ -301,6 +334,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.1',
+    description: 'New cluster license activation failing with unclear error message. Customer unable to find documentation on proper license activation procedure for air-gapped environments.',
     closedTag: {
       value: 'Prism Central - Install/Deploy',
       status: ValidationStatus.VALID,
@@ -321,6 +355,11 @@ export const mockCases = [
     issues: ['Missing KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-27T08:00:00Z',
     closedAt: '2026-01-28T10:15:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-27T09:00:00Z', description: 'Reviewed license activation error. Identified air-gapped environment without proper documentation.' },
+      { timestamp: '2026-01-27T15:00:00Z', description: 'Provided manual activation steps for air-gapped clusters. Customer completed activation.' },
+      { timestamp: '2026-01-28T10:00:00Z', description: 'Flagged documentation gap for KB creation. Case resolved.' },
+    ],
     identifiedActions: [
       {
         id: 'action-006-1',
@@ -348,6 +387,7 @@ export const mockCases = [
     aosVersion: '6.5.1',
     hypervisorVersion: 'ESXi 8.0',
     pcVersion: 'pc.2024.1',
+    description: 'Single node unexpectedly entered maintenance mode during production hours. VMs were live migrated but caused service disruption. Root cause traced to automated patching conflict.',
     closedTag: {
       value: 'Prism Central - Stuck Task',
       status: ValidationStatus.WRONG,
@@ -364,6 +404,12 @@ export const mockCases = [
     issues: ['Wrong closed tag'],
     createdAt: '2026-01-05T22:30:00Z',
     closedAt: '2026-01-12T15:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-06T08:00:00Z', description: 'Reviewed node maintenance logs. Identified unexpected maintenance mode entry during patch window.' },
+      { timestamp: '2026-01-08T11:00:00Z', description: 'Analyzed automated patching schedules and found conflict with maintenance policies.' },
+      { timestamp: '2026-01-10T14:00:00Z', description: 'Recommended patching schedule adjustment to avoid production hours.' },
+      { timestamp: '2026-01-12T14:30:00Z', description: 'Customer confirmed schedule changes applied. Issue resolved with AOS upgrade recommendation.' },
+    ],
     identifiedActions: [
       {
         id: 'action-007-1',
@@ -405,6 +451,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.2',
+    description: 'Data replication between sites experiencing delays beyond configured RPO threshold. Customer concerned about DR compliance requirements.',
     closedTag: {
       value: 'Prism Central - PE-PC Connection',
       status: ValidationStatus.VALID,
@@ -422,6 +469,12 @@ export const mockCases = [
     issues: ['Outdated KB article'],
     createdAt: '2026-01-26T07:30:00Z',
     closedAt: '2026-01-27T18:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-26T08:30:00Z', description: 'Analyzed replication metrics and network bandwidth utilization between sites.' },
+      { timestamp: '2026-01-26T14:00:00Z', description: 'Identified network congestion during peak backup windows as root cause.' },
+      { timestamp: '2026-01-27T10:00:00Z', description: 'Recommended staggered replication schedules to reduce bandwidth contention.' },
+      { timestamp: '2026-01-27T17:00:00Z', description: 'Customer implemented schedule changes. Replication lag now within threshold.' },
+    ],
     identifiedActions: [
       {
         id: 'action-008-1',
@@ -442,6 +495,7 @@ export const mockCases = [
     aosVersion: '6.5.0',
     hypervisorVersion: 'AHV 20220304.330',
     pcVersion: 'pc.2024.1',
+    description: 'Customer unable to create new protection domain. Error message indicated duplicate name conflict. Issue found to be duplicate of existing case.',
     closedTag: {
       value: 'Prism Central - Register/Unregister',
       status: ValidationStatus.VALID,
@@ -457,6 +511,11 @@ export const mockCases = [
       status: ValidationStatus.VALID,
     },
     issues: [],
+    actionsTaken: [
+      { timestamp: '2025-12-28T14:00:00Z', description: 'Reviewed case details and found similar case already open for this customer.' },
+      { timestamp: '2025-12-30T10:00:00Z', description: 'Confirmed duplicate case. Merged with existing case #02102545.' },
+      { timestamp: '2026-01-02T09:00:00Z', description: 'Closed as duplicate. Customer directed to primary case for updates.' },
+    ],
     identifiedActions: [],
   },
   {
@@ -469,6 +528,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.2',
+    description: 'GPU passthrough functionality stopped working after AOS upgrade. VMs with GPU assignments fail to power on with error indicating GPU device not found.',
     closedTag: {
       value: 'Prism Central - Upgrade',
       status: ValidationStatus.VALID,
@@ -486,6 +546,12 @@ export const mockCases = [
     issues: ['Missing KB article'],
     createdAt: '2026-01-23T16:00:00Z',
     closedAt: '2026-01-26T14:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-23T17:00:00Z', description: 'Collected GPU configuration and driver versions. Identified driver compatibility issue with new AOS.' },
+      { timestamp: '2026-01-24T11:00:00Z', description: 'Escalated to engineering for GPU driver analysis.' },
+      { timestamp: '2026-01-25T15:00:00Z', description: 'Engineering provided updated GPU driver package. Installed and tested.' },
+      { timestamp: '2026-01-26T14:00:00Z', description: 'GPU passthrough restored after driver update. Recommended KB creation for this issue.' },
+    ],
     identifiedActions: [
       {
         id: 'action-010-1',
@@ -527,6 +593,7 @@ export const mockCases = [
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'AHV 20220304.345',
     pcVersion: 'pc.2024.2',
+    description: 'CMSP authentication failing after security configuration changes. Users unable to log in via SSO. Error indicates SAML assertion validation failure.',
     closedTag: {
       value: 'Prism Central - CMSP - Authn / Authz',
       status: ValidationStatus.VALID,
@@ -542,6 +609,11 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-27T09:00:00Z',
     closedAt: '2026-01-28T11:45:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-27T10:00:00Z', description: 'Reviewed SAML configuration and identified clock skew issue between IdP and PC.' },
+      { timestamp: '2026-01-27T16:00:00Z', description: 'Guided customer through NTP configuration to sync time across all components.' },
+      { timestamp: '2026-01-28T11:00:00Z', description: 'SSO authentication restored after time sync. Case resolved.' },
+    ],
     identifiedActions: [],
   },
   {
@@ -554,6 +626,7 @@ export const mockCases = [
     aosVersion: '6.5.1',
     hypervisorVersion: 'ESXi 7.0 U3',
     pcVersion: 'pc.2024.1',
+    description: 'Prism Central upgrade process stuck at 80% completion for over 4 hours. No error messages displayed but progress bar not advancing.',
     closedTag: {
       value: 'Prism Central - CMSP - Upgrade',
       status: ValidationStatus.WRONG,
@@ -574,6 +647,12 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Wrong KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-24T10:30:00Z',
     closedAt: '2026-01-27T16:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-24T12:00:00Z', description: 'Reviewed upgrade logs and identified database migration step causing delay.' },
+      { timestamp: '2026-01-25T09:00:00Z', description: 'Found insufficient disk space for temporary upgrade files.' },
+      { timestamp: '2026-01-26T11:00:00Z', description: 'Guided customer through disk cleanup and upgrade retry.' },
+      { timestamp: '2026-01-27T15:00:00Z', description: 'Upgrade completed successfully after disk space remediation.' },
+    ],
     identifiedActions: [
       {
         id: 'action-012-1',
@@ -622,6 +701,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.1',
+    description: 'Image catalog sync between clusters failing intermittently. Some images successfully replicated while others remained stuck in pending state.',
     closedTag: {
       value: 'Prism Central - AHV Image Management',
       status: ValidationStatus.VALID,
@@ -637,6 +717,12 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-21T13:00:00Z',
     closedAt: '2026-01-24T10:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-21T14:30:00Z', description: 'Reviewed image sync logs across clusters. Identified intermittent failures on specific images.' },
+      { timestamp: '2026-01-22T11:00:00Z', description: 'Collected network trace and found packet loss between sites during sync window.' },
+      { timestamp: '2026-01-23T15:00:00Z', description: 'Unable to reproduce consistently. Issue appears network-related but RCA inconclusive.' },
+      { timestamp: '2026-01-24T09:30:00Z', description: 'Closed with RCA inconclusive. Recommended network monitoring for future occurrences.' },
+    ],
     identifiedActions: [
       {
         id: 'action-013-1',
@@ -657,6 +743,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.2',
+    description: 'Prism Central VM experiencing Out of Memory (OOM) events causing service restarts. Memory usage climbing to 100% over 12-hour period.',
     closedTag: {
       value: 'Prism Central - Out of Memory (OOM)',
       status: ValidationStatus.VALID,
@@ -674,6 +761,11 @@ export const mockCases = [
     issues: ['Outdated KB article'],
     createdAt: '2026-01-26T11:00:00Z',
     closedAt: '2026-01-28T09:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-26T12:00:00Z', description: 'Captured memory dumps and process analysis. Identified memory leak in statistics service.' },
+      { timestamp: '2026-01-27T10:00:00Z', description: 'Applied service restart as temporary workaround. Scheduled hotfix deployment.' },
+      { timestamp: '2026-01-28T09:00:00Z', description: 'Hotfix applied successfully. Memory usage now stable. Recommended KB update.' },
+    ],
     identifiedActions: [
       {
         id: 'action-014-1',
@@ -694,6 +786,7 @@ export const mockCases = [
     aosVersion: '6.5.0',
     hypervisorVersion: 'AHV 20220304.330',
     pcVersion: 'pc.2024.1',
+    description: 'Customer unable to generate PDF reports from dashboard. Export button shows spinning icon indefinitely. No error messages displayed.',
     closedTag: {
       value: 'Prism Central - Reporting',
       status: ValidationStatus.VALID,
@@ -711,6 +804,12 @@ export const mockCases = [
     issues: ['Missing KB article'],
     createdAt: '2026-01-18T15:00:00Z',
     closedAt: '2026-01-22T12:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-18T16:30:00Z', description: 'Reproduced issue in lab environment. Identified browser compatibility issue with PDF generation.' },
+      { timestamp: '2026-01-19T10:00:00Z', description: 'Tested with different browsers. Chrome works, Firefox fails.' },
+      { timestamp: '2026-01-21T14:00:00Z', description: 'Provided workaround using Chrome. Identified documentation gap for browser requirements.' },
+      { timestamp: '2026-01-22T11:30:00Z', description: 'Case resolved with workaround. Documentation update request filed.' },
+    ],
     identifiedActions: [
       {
         id: 'action-015-1',
@@ -752,6 +851,7 @@ export const mockCases = [
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'AHV 20220304.345',
     pcVersion: 'pc.2024.2',
+    description: 'All CVMs in cluster showing 100% CPU utilization. Performance degraded across all VMs. Issue started after enabling new monitoring feature.',
     closedTag: {
       value: 'Prism Central - CPU Usage',
       status: ValidationStatus.VALID,
@@ -767,6 +867,11 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-28T12:00:00Z',
     closedAt: '2026-01-28T17:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-28T12:30:00Z', description: 'Identified runaway process on all CVMs consuming CPU. Traced to new monitoring agent.' },
+      { timestamp: '2026-01-28T14:00:00Z', description: 'Disabled monitoring feature as emergency mitigation. CPU usage returned to normal.' },
+      { timestamp: '2026-01-28T17:00:00Z', description: 'Applied configuration fix for monitoring agent. Re-enabled feature successfully.' },
+    ],
     identifiedActions: [],
   },
   {
@@ -779,6 +884,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'ESXi 8.0',
     pcVersion: 'pc.2024.1',
+    description: 'IAM role permissions not synchronizing correctly across registered clusters. Users losing access intermittently when switching between clusters.',
     closedTag: {
       value: 'Prism Central - CMSP - IAM',
       status: ValidationStatus.VALID,
@@ -796,6 +902,12 @@ export const mockCases = [
     issues: ['Missing JIRA ticket'],
     createdAt: '2026-01-15T09:30:00Z',
     closedAt: '2026-01-19T14:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-15T11:00:00Z', description: 'Analyzed IAM sync logs across clusters. Found permission cache inconsistencies.' },
+      { timestamp: '2026-01-17T09:00:00Z', description: 'Cleared IAM cache and triggered full sync. Permissions restored temporarily.' },
+      { timestamp: '2026-01-18T14:00:00Z', description: 'Applied configuration changes to improve cache refresh timing.' },
+      { timestamp: '2026-01-19T13:30:00Z', description: 'Verified sync stability over 24 hours. Case resolved with JIRA attachment recommendation.' },
+    ],
     identifiedActions: [
       {
         id: 'action-017-1',
@@ -816,6 +928,7 @@ export const mockCases = [
     aosVersion: '6.5.1',
     hypervisorVersion: 'AHV 20220304.336',
     pcVersion: 'pc.2024.1',
+    description: 'Life Cycle Manager (LCM) updates failing with timeout errors. Updates start but fail after 30 minutes with no meaningful error message.',
     closedTag: {
       value: 'Prism Central - Upgrade',
       status: ValidationStatus.WRONG,
@@ -836,6 +949,12 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Wrong KB article', 'Wrong JIRA ticket'],
     createdAt: '2026-01-25T14:00:00Z',
     closedAt: '2026-01-27T11:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-25T15:30:00Z', description: 'Reviewed LCM logs and identified network timeout during package download phase.' },
+      { timestamp: '2026-01-26T09:00:00Z', description: 'Tested network connectivity to update server. Found firewall blocking specific URLs.' },
+      { timestamp: '2026-01-26T16:00:00Z', description: 'Provided firewall rule updates for LCM endpoints. Customer applied changes.' },
+      { timestamp: '2026-01-27T11:00:00Z', description: 'LCM update completed successfully after firewall adjustments.' },
+    ],
     identifiedActions: [
       {
         id: 'action-018-1',
@@ -884,6 +1003,7 @@ export const mockCases = [
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'AHV 20220304.345',
     pcVersion: 'pc.2024.2',
+    description: 'Prism Central became unresponsive after applying security hotfix. All services showing as running but web UI not loading.',
     closedTag: {
       value: 'Prism Central - PC Management',
       status: ValidationStatus.VALID,
@@ -899,6 +1019,11 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-27T15:00:00Z',
     closedAt: '2026-01-28T08:45:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-27T16:00:00Z', description: 'Collected service status and logs. Found nginx configuration corrupted during hotfix.' },
+      { timestamp: '2026-01-27T18:00:00Z', description: 'Restored nginx configuration from backup. Services came back online.' },
+      { timestamp: '2026-01-28T08:30:00Z', description: 'Verified PC functionality fully restored. Hotfix reapplied with correct procedure.' },
+    ],
     identifiedActions: [],
   },
   {
@@ -911,6 +1036,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'ESXi 7.0 U3',
     pcVersion: 'pc.2024.1',
+    description: 'LDAP group synchronization failing intermittently. Some sync cycles complete successfully while others fail with timeout errors.',
     closedTag: {
       value: 'Prism Central - LDAP',
       status: ValidationStatus.VALID,
@@ -931,6 +1057,12 @@ export const mockCases = [
     issues: ['Outdated KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-16T17:00:00Z',
     closedAt: '2026-01-20T15:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-17T09:00:00Z', description: 'Analyzed LDAP sync logs and identified pattern of failures during peak usage hours.' },
+      { timestamp: '2026-01-18T14:00:00Z', description: 'Tested LDAP server response times. Found high latency during peak periods.' },
+      { timestamp: '2026-01-19T10:00:00Z', description: 'Unable to consistently reproduce. RCA inconclusive due to intermittent nature.' },
+      { timestamp: '2026-01-20T15:00:00Z', description: 'Closed with monitoring recommendations. KB update needed for troubleshooting steps.' },
+    ],
     identifiedActions: [
       {
         id: 'action-020-1',
@@ -973,6 +1105,7 @@ export const mockCases = [
     aosVersion: '6.5.3',
     hypervisorVersion: 'AHV 20220304.350',
     pcVersion: 'pc.2024.3',
+    description: 'Custom dashboard widgets configured by users are not persisting after browser refresh. Feature was recently released with limited documentation.',
     closedTag: {
       value: 'Prism Central - UI/UX',
       status: ValidationStatus.VALID,
@@ -991,6 +1124,11 @@ export const mockCases = [
     issues: ['Missing KB article - needs drafting'],
     createdAt: '2026-01-25T09:00:00Z',
     closedAt: '2026-01-28T14:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-25T10:30:00Z', description: 'Reproduced widget persistence issue. Confirmed bug in new feature.' },
+      { timestamp: '2026-01-26T14:00:00Z', description: 'Engineering confirmed fix in upcoming patch. Provided workaround for now.' },
+      { timestamp: '2026-01-28T13:30:00Z', description: 'Workaround implemented successfully. KB draft requested for new feature.' },
+    ],
     identifiedActions: [
       {
         id: 'action-021-1',
@@ -1011,6 +1149,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.2',
+    description: 'Storage container replication between remote sites experiencing significant delays. RPO objectives not being met during peak I/O periods.',
     closedTag: {
       value: 'Prism Central - Data Protection',
       status: ValidationStatus.VALID,
@@ -1029,6 +1168,11 @@ export const mockCases = [
     issues: ['KB needs review and update'],
     createdAt: '2026-01-24T11:00:00Z',
     closedAt: '2026-01-27T16:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-24T13:00:00Z', description: 'Analyzed replication metrics and network bandwidth. Found I/O contention during backup windows.' },
+      { timestamp: '2026-01-25T10:00:00Z', description: 'Recommended scheduling replication outside of backup windows.' },
+      { timestamp: '2026-01-27T16:00:00Z', description: 'Customer implemented scheduling changes. RPO now being met consistently.' },
+    ],
     identifiedActions: [
       {
         id: 'action-022-1',
@@ -1049,6 +1193,7 @@ export const mockCases = [
     aosVersion: '6.5.1',
     hypervisorVersion: 'AHV 20220304.336',
     pcVersion: 'pc.2024.1',
+    description: 'VLAN tagging not working correctly on AHV virtual switches. VMs unable to communicate across VLANs despite correct configuration.',
     closedTag: {
       value: 'Prism Central - Networking',
       status: ValidationStatus.VALID,
@@ -1067,6 +1212,11 @@ export const mockCases = [
     issues: ['Missing KB article'],
     createdAt: '2026-01-22T08:30:00Z',
     closedAt: '2026-01-25T12:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-22T10:00:00Z', description: 'Reviewed virtual switch configuration and found trunk port misconfiguration on physical switch.' },
+      { timestamp: '2026-01-23T14:00:00Z', description: 'Worked with customer network team to correct trunk port settings.' },
+      { timestamp: '2026-01-25T11:30:00Z', description: 'VLAN communication restored after trunk configuration fix. KB attachment recommended.' },
+    ],
     identifiedActions: [
       {
         id: 'action-023-1',
@@ -1087,6 +1237,7 @@ export const mockCases = [
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'ESXi 8.0',
     pcVersion: 'pc.2024.2',
+    description: 'Prism Central scale-out deployment failing during node addition. Third node fails to join with cluster membership error.',
     closedTag: {
       value: 'Prism Central - Scale Out',
       status: ValidationStatus.WRONG,
@@ -1106,6 +1257,11 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'KB needs review'],
     createdAt: '2026-01-26T14:00:00Z',
     closedAt: '2026-01-28T10:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-26T15:30:00Z', description: 'Analyzed scale-out logs and identified certificate mismatch on third node.' },
+      { timestamp: '2026-01-27T11:00:00Z', description: 'Regenerated certificates and reattempted node addition.' },
+      { timestamp: '2026-01-28T09:30:00Z', description: 'Scale-out completed successfully. KB review recommended for certificate handling.' },
+    ],
     identifiedActions: [
       {
         id: 'action-024-1',
@@ -1133,6 +1289,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.1',
+    description: 'Flow microsegmentation rules not being enforced on specific VM categories. Traffic allowed despite deny rules configured.',
     closedTag: {
       value: 'Prism Central - Flow',
       status: ValidationStatus.VALID,
@@ -1148,6 +1305,11 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-23T10:00:00Z',
     closedAt: '2026-01-26T15:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-23T12:00:00Z', description: 'Reviewed Flow policies and identified category assignment issue on affected VMs.' },
+      { timestamp: '2026-01-24T09:00:00Z', description: 'Corrected VM category assignments. Policies began enforcing correctly.' },
+      { timestamp: '2026-01-26T14:30:00Z', description: 'Verified policy enforcement over 48 hours. Issue resolved.' },
+    ],
     identifiedActions: [],
   },
   {
@@ -1160,6 +1322,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
     pcVersion: 'pc.2024.2',
+    description: 'Calm blueprint deployments timing out for complex multi-tier applications. Deployments start but fail after default 30-minute timeout.',
     closedTag: {
       value: 'Prism Central - Calm',
       status: ValidationStatus.VALID,
@@ -1178,6 +1341,11 @@ export const mockCases = [
     issues: ['Missing KB article - needs drafting'],
     createdAt: '2026-01-27T13:00:00Z',
     closedAt: '2026-01-28T17:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-27T14:00:00Z', description: 'Analyzed blueprint execution logs. Identified slow network provisioning step.' },
+      { timestamp: '2026-01-27T17:00:00Z', description: 'Recommended timeout extension in blueprint configuration.' },
+      { timestamp: '2026-01-28T16:30:00Z', description: 'Deployment succeeded with extended timeout. KB draft recommended.' },
+    ],
     identifiedActions: [
       {
         id: 'action-026-1',
@@ -1219,6 +1387,7 @@ export const mockCases = [
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'AHV 20220304.345',
     pcVersion: 'pc.2024.2',
+    description: 'Objects S3 bucket creation failing with permission denied error. User has correct IAM roles assigned but bucket creation still blocked.',
     closedTag: {
       value: 'Prism Central - Objects',
       status: ValidationStatus.WRONG,
@@ -1240,6 +1409,11 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Wrong KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-26T09:00:00Z',
     closedAt: '2026-01-28T11:30:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-26T10:30:00Z', description: 'Reviewed IAM role permissions and found missing bucket creation privilege.' },
+      { timestamp: '2026-01-27T09:00:00Z', description: 'Added required permission to IAM role. Tested bucket creation.' },
+      { timestamp: '2026-01-28T11:00:00Z', description: 'Bucket creation working. Recommended KB and JIRA updates for this scenario.' },
+    ],
     identifiedActions: [
       {
         id: 'action-027-1',
@@ -1288,6 +1462,7 @@ export const mockCases = [
     aosVersion: '6.5.2',
     hypervisorVersion: 'ESXi 7.0 U3',
     pcVersion: 'pc.2024.1',
+    description: 'Files server analytics dashboard showing no data despite file server being operational. Analytics collection appears to be running but no metrics displayed.',
     closedTag: {
       value: 'Prism Central - Files',
       status: ValidationStatus.VALID,
@@ -1306,6 +1481,12 @@ export const mockCases = [
     issues: ['Outdated KB article'],
     createdAt: '2026-01-25T15:00:00Z',
     closedAt: '2026-01-28T09:00:00Z',
+    actionsTaken: [
+      { timestamp: '2026-01-25T16:30:00Z', description: 'Verified analytics service status. Service running but not ingesting data.' },
+      { timestamp: '2026-01-26T10:00:00Z', description: 'Restarted analytics collection service. Data started appearing intermittently.' },
+      { timestamp: '2026-01-27T14:00:00Z', description: 'Unable to identify consistent root cause. RCA inconclusive.' },
+      { timestamp: '2026-01-28T08:30:00Z', description: 'Closed with monitoring. KB update recommended for troubleshooting steps.' },
+    ],
     identifiedActions: [
       {
         id: 'action-028-1',
