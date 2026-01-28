@@ -18,7 +18,7 @@ function MainLayout() {
   const shouldShowSidebar = layoutConfig.showSidebar && isDashboardRoute;
 
   return (
-    <StackingLayout itemSpacing="0px" style={{ minHeight: '100vh' }}>
+    <StackingLayout itemSpacing="0px">
       {/* Header - fixed at top */}
       {layoutConfig.showHeader && <Header />}
       
