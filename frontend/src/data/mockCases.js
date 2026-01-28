@@ -24,8 +24,10 @@ export const mockCases = [
     title: 'Cluster connectivity issues after firmware upgrade',
     bucket: 'Bug/Improvement',
     accountName: 'Acme Corporation',
+    owner: 'John Smith',
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - Others',
       status: ValidationStatus.WRONG,
@@ -35,7 +37,7 @@ export const mockCases = [
       value: 'KB-9876',
       status: ValidationStatus.OUTDATED,
       suggestedValue: 'KB-12345',
-      reason: 'Outdated for AOS 6.5.x',
+      reason: 'Outdated: KB does not apply to AOS 6.5.x',
     },
     jiraTicket: {
       value: 'ENG-45678',
@@ -43,6 +45,7 @@ export const mockCases = [
     },
     issues: ['Wrong closed tag', 'Outdated KB article'],
     createdAt: '2026-01-14T08:30:00Z',
+    closedAt: '2026-01-20T16:45:00Z',
   },
   {
     id: 'case-002',
@@ -50,8 +53,10 @@ export const mockCases = [
     title: 'VM migration fails with storage error',
     bucket: 'Customer Assistance',
     accountName: 'TechStart Inc',
+    owner: 'Sarah Johnson',
     aosVersion: '6.5.1',
     hypervisorVersion: 'AHV 20220304.336',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - CMSP',
       status: ValidationStatus.VALID,
@@ -68,6 +73,7 @@ export const mockCases = [
     },
     issues: ['Missing KB article'],
     createdAt: '2026-01-20T10:15:00Z',
+    closedAt: '2026-01-24T14:30:00Z',
   },
   {
     id: 'case-003',
@@ -75,8 +81,10 @@ export const mockCases = [
     title: 'Prism Central dashboard loading slowly',
     bucket: 'RCA-Inconclusive',
     accountName: 'Global Finance Ltd',
+    owner: 'Mike Chen',
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'ESXi 7.0 U3',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - Upgrade',
       status: ValidationStatus.WRONG,
@@ -94,6 +102,7 @@ export const mockCases = [
     },
     issues: ['Wrong closed tag', 'Missing JIRA ticket'],
     createdAt: '2026-01-25T11:45:00Z',
+    closedAt: '2026-01-27T09:20:00Z',
   },
   {
     id: 'case-004',
@@ -101,8 +110,10 @@ export const mockCases = [
     title: 'Backup job fails with permission denied',
     bucket: 'Cx Environment',
     accountName: 'Healthcare Plus',
+    owner: 'Emily Davis',
     aosVersion: '6.5.0',
     hypervisorVersion: 'AHV 20220304.330',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - LDAP',
       status: ValidationStatus.VALID,
@@ -117,6 +128,7 @@ export const mockCases = [
     },
     issues: [],
     createdAt: '2026-01-10T09:00:00Z',
+    closedAt: '2026-01-15T11:30:00Z',
   },
   {
     id: 'case-005',
@@ -124,8 +136,10 @@ export const mockCases = [
     title: 'Alert storm from multiple hosts',
     bucket: 'Issue Self-Resolved',
     accountName: 'Retail Solutions Co',
+    owner: 'Robert Wilson',
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - App Monitoring/Xstream',
       status: ValidationStatus.VALID,
@@ -144,6 +158,7 @@ export const mockCases = [
     },
     issues: ['Wrong KB article', 'Wrong JIRA ticket'],
     createdAt: '2026-01-22T14:00:00Z',
+    closedAt: '2026-01-25T16:45:00Z',
   },
   {
     id: 'case-006',
@@ -151,8 +166,10 @@ export const mockCases = [
     title: 'License activation failed on new cluster',
     bucket: 'Documentation Gap',
     accountName: 'StartupXYZ',
+    owner: 'Lisa Brown',
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - Install/Deploy',
       status: ValidationStatus.VALID,
@@ -171,6 +188,7 @@ export const mockCases = [
     },
     issues: ['Missing KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-27T08:00:00Z',
+    closedAt: '2026-01-28T10:15:00Z',
   },
   {
     id: 'case-007',
@@ -178,8 +196,10 @@ export const mockCases = [
     title: 'Node went into maintenance mode unexpectedly',
     bucket: 'Bug/Improvement',
     accountName: 'Manufacturing Corp',
+    owner: 'David Lee',
     aosVersion: '6.5.1',
     hypervisorVersion: 'ESXi 8.0',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - Stuck Task',
       status: ValidationStatus.WRONG,
@@ -195,6 +215,7 @@ export const mockCases = [
     },
     issues: ['Wrong closed tag'],
     createdAt: '2026-01-05T22:30:00Z',
+    closedAt: '2026-01-12T15:00:00Z',
   },
   {
     id: 'case-008',
@@ -202,8 +223,10 @@ export const mockCases = [
     title: 'Data replication lag exceeding threshold',
     bucket: 'Customer Assistance',
     accountName: 'Insurance Group',
+    owner: 'Jennifer Martinez',
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - PE-PC Connection',
       status: ValidationStatus.VALID,
@@ -220,6 +243,7 @@ export const mockCases = [
     },
     issues: ['Outdated KB article'],
     createdAt: '2026-01-26T07:30:00Z',
+    closedAt: '2026-01-27T18:00:00Z',
   },
   {
     id: 'case-009',
@@ -227,8 +251,10 @@ export const mockCases = [
     title: 'Unable to create new protection domain',
     bucket: 'Duplicate/Invalid',
     accountName: 'University of Technology',
+    owner: 'Chris Anderson',
     aosVersion: '6.5.0',
     hypervisorVersion: 'AHV 20220304.330',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - Register/Unregister',
       status: ValidationStatus.VALID,
@@ -237,12 +263,13 @@ export const mockCases = [
       value: 'KB-33445',
       status: ValidationStatus.VALID,
     },
+    createdAt: '2025-12-28T13:00:00Z',
+    closedAt: '2026-01-02T09:30:00Z',
     jiraTicket: {
       value: 'ENG-77889',
       status: ValidationStatus.VALID,
     },
     issues: [],
-    createdAt: '2025-12-28T13:00:00Z',
   },
   {
     id: 'case-010',
@@ -250,8 +277,10 @@ export const mockCases = [
     title: 'GPU passthrough not working after upgrade',
     bucket: 'Bug/Improvement',
     accountName: 'AI Research Labs',
+    owner: 'Amanda Taylor',
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - Upgrade',
       status: ValidationStatus.VALID,
@@ -268,6 +297,7 @@ export const mockCases = [
     },
     issues: ['Missing KB article'],
     createdAt: '2026-01-23T16:00:00Z',
+    closedAt: '2026-01-26T14:30:00Z',
   },
   {
     id: 'case-011',
@@ -275,8 +305,10 @@ export const mockCases = [
     title: 'CMSP authentication failures after config change',
     bucket: 'Bug/Improvement',
     accountName: 'SecureBank Financial',
+    owner: 'Kevin White',
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'AHV 20220304.345',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - CMSP - Authn / Authz',
       status: ValidationStatus.VALID,
@@ -291,6 +323,7 @@ export const mockCases = [
     },
     issues: [],
     createdAt: '2026-01-27T09:00:00Z',
+    closedAt: '2026-01-28T11:45:00Z',
   },
   {
     id: 'case-012',
@@ -298,8 +331,10 @@ export const mockCases = [
     title: 'PC upgrade stuck at 80%',
     bucket: 'Customer Assistance',
     accountName: 'Metro City Hospital',
+    owner: 'Nancy Garcia',
     aosVersion: '6.5.1',
     hypervisorVersion: 'ESXi 7.0 U3',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - CMSP - Upgrade',
       status: ValidationStatus.WRONG,
@@ -319,6 +354,7 @@ export const mockCases = [
     },
     issues: ['Wrong closed tag', 'Wrong KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-24T10:30:00Z',
+    closedAt: '2026-01-27T16:00:00Z',
   },
   {
     id: 'case-013',
@@ -326,8 +362,10 @@ export const mockCases = [
     title: 'AHV Image Management sync failing',
     bucket: 'RCA-Inconclusive',
     accountName: 'Digital Media Group',
+    owner: 'Tom Harris',
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - AHV Image Management',
       status: ValidationStatus.VALID,
@@ -342,6 +380,7 @@ export const mockCases = [
     },
     issues: [],
     createdAt: '2026-01-21T13:00:00Z',
+    closedAt: '2026-01-24T10:00:00Z',
   },
   {
     id: 'case-014',
@@ -349,8 +388,10 @@ export const mockCases = [
     title: 'Memory usage spike on PC causing OOM',
     bucket: 'Bug/Improvement',
     accountName: 'CloudFirst Technologies',
+    owner: 'Rachel Moore',
     aosVersion: '6.5.2',
     hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - Out of Memory (OOM)',
       status: ValidationStatus.VALID,
@@ -367,6 +408,7 @@ export const mockCases = [
     },
     issues: ['Outdated KB article'],
     createdAt: '2026-01-26T11:00:00Z',
+    closedAt: '2026-01-28T09:30:00Z',
   },
   {
     id: 'case-015',
@@ -374,8 +416,10 @@ export const mockCases = [
     title: 'Reporting dashboard not generating PDF',
     bucket: 'Documentation Gap',
     accountName: 'Analytics Pro Inc',
+    owner: 'Steve Clark',
     aosVersion: '6.5.0',
     hypervisorVersion: 'AHV 20220304.330',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - Reporting',
       status: ValidationStatus.VALID,
@@ -392,6 +436,7 @@ export const mockCases = [
     },
     issues: ['Missing KB article'],
     createdAt: '2026-01-18T15:00:00Z',
+    closedAt: '2026-01-22T12:00:00Z',
   },
   {
     id: 'case-016',
@@ -399,8 +444,10 @@ export const mockCases = [
     title: 'CPU usage at 100% on all CVMs',
     bucket: 'Bug/Improvement',
     accountName: 'E-Commerce Giants',
+    owner: 'Michelle Lewis',
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'AHV 20220304.345',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - CPU Usage',
       status: ValidationStatus.VALID,
@@ -415,6 +462,7 @@ export const mockCases = [
     },
     issues: [],
     createdAt: '2026-01-28T12:00:00Z',
+    closedAt: '2026-01-28T17:30:00Z',
   },
   {
     id: 'case-017',
@@ -422,8 +470,10 @@ export const mockCases = [
     title: 'IAM role permissions not syncing correctly',
     bucket: 'Customer Assistance',
     accountName: 'Federal Services Agency',
+    owner: 'Brian Hall',
     aosVersion: '6.5.2',
     hypervisorVersion: 'ESXi 8.0',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - CMSP - IAM',
       status: ValidationStatus.VALID,
@@ -440,6 +490,7 @@ export const mockCases = [
     },
     issues: ['Missing JIRA ticket'],
     createdAt: '2026-01-15T09:30:00Z',
+    closedAt: '2026-01-19T14:00:00Z',
   },
   {
     id: 'case-018',
@@ -447,8 +498,10 @@ export const mockCases = [
     title: 'LCM update failing with timeout error',
     bucket: 'Bug/Improvement',
     accountName: 'Telecom Networks Ltd',
+    owner: 'Patricia Young',
     aosVersion: '6.5.1',
     hypervisorVersion: 'AHV 20220304.336',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - Upgrade',
       status: ValidationStatus.WRONG,
@@ -468,6 +521,7 @@ export const mockCases = [
     },
     issues: ['Wrong closed tag', 'Wrong KB article', 'Wrong JIRA ticket'],
     createdAt: '2026-01-25T14:00:00Z',
+    closedAt: '2026-01-27T11:30:00Z',
   },
   {
     id: 'case-019',
@@ -475,8 +529,10 @@ export const mockCases = [
     title: 'PC unresponsive after applying hotfix',
     bucket: 'Bug/Improvement',
     accountName: 'Energy Solutions Corp',
+    owner: 'Daniel King',
     aosVersion: '6.5.2.1',
     hypervisorVersion: 'AHV 20220304.345',
+    pcVersion: 'pc.2024.2',
     closedTag: {
       value: 'Prism Central - PC Management',
       status: ValidationStatus.VALID,
@@ -491,6 +547,7 @@ export const mockCases = [
     },
     issues: [],
     createdAt: '2026-01-27T15:00:00Z',
+    closedAt: '2026-01-28T08:45:00Z',
   },
   {
     id: 'case-020',
@@ -498,8 +555,10 @@ export const mockCases = [
     title: 'LDAP group sync intermittently failing',
     bucket: 'RCA-Inconclusive',
     accountName: 'National University',
+    owner: 'Sandra Wright',
     aosVersion: '6.5.2',
     hypervisorVersion: 'ESXi 7.0 U3',
+    pcVersion: 'pc.2024.1',
     closedTag: {
       value: 'Prism Central - LDAP',
       status: ValidationStatus.VALID,
@@ -518,6 +577,7 @@ export const mockCases = [
     },
     issues: ['Outdated KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-16T17:00:00Z',
+    closedAt: '2026-01-20T15:30:00Z',
   },
 ];
 
