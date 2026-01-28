@@ -4,7 +4,6 @@ import {
   Badge,
   Progress,
   FlexLayout,
-  OrderedList,
   Alert,
   AIIcon,
   Button,
@@ -40,33 +39,47 @@ function DashboardOverview() {
       {/* Metrics Row */}
       <FlexLayout itemGap="S" flexWrap="wrap">
         <MiniCard title="Total Cases" count={data.totalCases} />
-        <MiniCard title="Clusters Identified" count={data.clusters.total} />
+        <MiniCard title="Case Buckets Identified" count={data.buckets.total} />
         <MiniCard title="Actions Required" count={data.actions.total} />
         <MiniCard title="KB/JIRA Issues" count={data.kbJiraIssues.total} />
-        <MiniCard title="Components Involved" count={data.components.total} />
+        <MiniCard title="Closed Tags" count={data.closedTags.total} />
       </FlexLayout>
 
       {/* Content Grid */}
       <div className="content-grid">
-        {/* Issue Clusters */}
+        {/* Case Buckets - Ordered List */}
         <BigCard
-          title="Issue Clusters"
-          linkTitle="View All"
-          linkRoute={`/dashboard/${reportId}/clusters`}
+          title="Top Case Buckets"
+          linkTitle="View All Cases"
+          linkRoute={`/dashboard/${reportId}/cases`}
         >
-          <OrderedList
-            data={data.clusters.topIssues.map((issue) => (
-              <FlexLayout
-                key={issue.id}
-                justifyContent="space-between"
-                alignItems="center"
-                style={{ width: '100%'}}
-              >
-                <TextLabel type={ TextLabel.TEXT_LABEL_TYPE.PRIMARY} >{issue.name}</TextLabel>
-                <Badge color="gray" count={`${issue.count} cases`} />
+          {data.buckets.topIssues.map((bucket, idx) => (
+            <FlexLayout
+              key={bucket.id}
+              justifyContent="space-between"
+              alignItems="center"
+              style={{ width: '100%' }}
+            >
+              <FlexLayout alignItems="center" itemGap="S">
+                <span style={{ 
+                  width: '20px', 
+                  height: '20px', 
+                  borderRadius: '50%', 
+                  backgroundColor: bucket.fill,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                }} >
+                  {idx + 1}
+                </span>
+                <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{bucket.name}</TextLabel>
               </FlexLayout>
-            ))}
-          />
+              <Badge color="gray" count={`${bucket.count} cases`} />
+            </FlexLayout>
+          ))}
         </BigCard>
 
         {/* Actions Identified */}
@@ -127,29 +140,29 @@ function DashboardOverview() {
           </FlexLayout>
         </BigCard>
 
-        {/* Top Components */}
+        {/* Top Closed Tags */}
         <BigCard
-          title="Top Components"
-          linkTitle="View Charts"
+          title="Top Closed Tags"
+          linkTitle="View All Tags"
           linkRoute={`/dashboard/${reportId}/graphs`}
         >
-          {data.components.topComponents.map((comp, idx) => {
+          {data.closedTags.topTags.map((tag) => {
             // Color based on percentage: high = danger (red), medium = warning, low = success (green)
             const getStatusByPercentage = (percent) => {
-              if (percent >= 25) return Progress.ProgressStatus.DANGER;
-              if (percent >= 20) return Progress.ProgressStatus.WARNING;
+              if (percent >= 20) return Progress.ProgressStatus.DANGER;
+              if (percent >= 15) return Progress.ProgressStatus.WARNING;
               return Progress.ProgressStatus.SUCCESS;
             };
             return (
               <Progress
-                key={idx}
+                key={tag.id}
                 labelPosition="top"
-                percent={comp.percentage}
-                status={getStatusByPercentage(comp.percentage)}
+                percent={tag.percentage}
+                status={getStatusByPercentage(tag.percentage)}
                 label={
                   <FlexLayout justifyContent="space-between" alignItems="center">
-                    <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{comp.name}</TextLabel>
-                    <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>{comp.percentage}%</TextLabel>
+                    <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{tag.name}</TextLabel>
+                    <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>{tag.percentage}%</TextLabel>
                   </FlexLayout>
                 }
               />
