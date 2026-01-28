@@ -7,6 +7,7 @@ import {
   Alert,
   AIIcon,
   Button,
+  Title,
 } from '@nutanix-ui/prism-reactjs';
 import { MiniCard, BigCard } from '../../components/common';
 import { mockDashboardData } from '../../data/mockDashboard';
@@ -18,7 +19,17 @@ function DashboardOverview() {
   const data = mockDashboardData;
 
   return (
-    <FlexLayout flexDirection="column" itemGap='L' style={{ padding: '12px' }} flexWrap='wrap'>
+    <FlexLayout flexDirection="column" itemGap="M" style={{ padding: '16px 24px' }}>
+      {/* Page Header */}
+      <FlexLayout justifyContent="space-between" alignItems="center">
+        <FlexLayout alignItems="center" itemGap="L">
+          <Title size="h2">Overview</Title>
+          <FlexLayout alignItems="center" itemGap="S">
+            <Badge color="gray" count={`${data.totalCases} cases`} />
+            <Badge color="blue" count={data.releaseVersion} />
+          </FlexLayout>
+        </FlexLayout>
+      </FlexLayout>
 
       {/* AI Insight Alert */}
       <Alert
