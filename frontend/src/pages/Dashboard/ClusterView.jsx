@@ -16,13 +16,20 @@ import styles from './ClusterView.module.css';
 function ClusterView() {
   const { reportId } = useOutletContext();
 
+  // Calculate totals
+  const totalCases = mockClusters.reduce((sum, c) => sum + c.count, 0);
+
   return (
-    <StackingLayout itemSpacing="24px" className={styles.clusterView} padding="24px">
-      <FlexLayout flexDirection="column" itemSpacing="4px">
-        <Title size="h3">Clusters / Similar Issues</Title>
-        <TextLabel type="secondary">
-          AI-detected patterns and grouped similar issues for efficient resolution
-        </TextLabel>
+    <FlexLayout flexDirection="column" itemGap="L" className={styles.clusterView} style={{ padding: '24px' }}>
+      {/* Page Header */}
+      <FlexLayout justifyContent="space-between" alignItems="center">
+        <FlexLayout alignItems="center" itemGap="L">
+          <Title size="h2">Issue Clusters</Title>
+          <FlexLayout alignItems="center" itemGap="S">
+            <Badge color="gray" count={`${mockClusters.length} clusters`} />
+            <Badge color="blue" count={`${totalCases} cases`} />
+          </FlexLayout>
+        </FlexLayout>
       </FlexLayout>
 
       {/* Balloon Chart Visualization */}
@@ -156,7 +163,7 @@ function ClusterView() {
           />
         </FlexItem>
       </FlexLayout>
-    </StackingLayout>
+    </FlexLayout>
   );
 }
 

@@ -192,11 +192,16 @@ function GraphView() {
   const totalTaggedCases = closedTagsData.reduce((sum, t) => sum + t.value, 0);
 
   return (
-    <StackingLayout itemGap="L" padding="20px" className={styles.graphView}>
-      {/* Header */}
-      <FlexLayout flexDirection="column" itemGap="L">
-        <Title size="h3">Charts & Graphs</Title>
-        <TextLabel type="secondary">Visual analytics and insights from your case data</TextLabel>
+    <FlexLayout flexDirection="column" itemGap="L" className={styles.graphView} style={{ padding: '24px' }}>
+      {/* Page Header */}
+      <FlexLayout justifyContent="space-between" alignItems="center">
+        <FlexLayout alignItems="center" itemGap="L">
+          <Title size="h2">Charts & Graphs</Title>
+          <FlexLayout alignItems="center" itemGap="S">
+            <Badge color="gray" count={`${totalCases} cases`} />
+            <Badge color="blue" count={`${closedTagsData.length} tags`} />
+          </FlexLayout>
+        </FlexLayout>
       </FlexLayout>
 
       {/* Case Buckets - Donut Chart */}
@@ -215,7 +220,7 @@ function GraphView() {
         data={closedTagsData}
         total={totalTaggedCases}
       />
-    </StackingLayout>
+    </FlexLayout>
   );
 }
 

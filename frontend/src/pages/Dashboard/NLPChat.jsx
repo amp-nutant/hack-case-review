@@ -12,6 +12,7 @@ import {
   TextArea,
   DashboardWidgetLayout,
   DashboardWidgetHeader,
+  Badge,
 } from '@nutanix-ui/prism-reactjs';
 import { sendChatMessage, clearChatHistory } from '../../redux/slices/analysisSlice';
 import styles from './NLPChat.module.css';
@@ -74,13 +75,14 @@ function NLPChat() {
   };
 
   return (
-    <StackingLayout itemSpacing="16px" className={styles.chatView}>
+    <FlexLayout flexDirection="column" itemGap="L" className={styles.chatView} style={{ padding: '24px' }}>
+      {/* Page Header */}
       <FlexLayout justifyContent="space-between" alignItems="center">
-        <FlexLayout flexDirection="column" itemSpacing="4px">
-          <Title size="h3">NLP Chat</Title>
-          <TextLabel type="secondary">
-            Ask questions about your case data in natural language
-          </TextLabel>
+        <FlexLayout alignItems="center" itemGap="L">
+          <Title size="h2">NLP Chat</Title>
+          <FlexLayout alignItems="center" itemGap="S">
+            <Badge color="gray" count={`${displayHistory.length} messages`} />
+          </FlexLayout>
         </FlexLayout>
         <Button
           type="borderless"
@@ -177,7 +179,7 @@ function NLPChat() {
           </StackingLayout>
         }
       />
-    </StackingLayout>
+    </FlexLayout>
   );
 }
 
