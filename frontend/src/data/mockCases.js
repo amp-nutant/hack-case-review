@@ -7,6 +7,13 @@
  * - KB Article with validation (exists, isOutdated, isWrong, suggestedKB)
  * - JIRA with validation (exists, isWrong, suggestedJira)
  * - Issues detected by the model
+ * - Identified Actions for the case review
+ * 
+ * KB Action Types:
+ * - 'attach': Attach an existing suggested KB
+ * - 'update': Update to a different/newer KB
+ * - 'draft': Draft a new KB (no existing KB covers this)
+ * - 'review': Review and potentially update the KB content
  */
 
 // Validation status types
@@ -15,6 +22,36 @@ export const ValidationStatus = {
   WRONG: 'wrong',
   OUTDATED: 'outdated',
   MISSING: 'missing',
+};
+
+// KB Action types
+export const KBActionType = {
+  ATTACH: 'attach',    // Attach an existing KB
+  UPDATE: 'update',    // Update to a different KB
+  DRAFT: 'draft',      // Draft a new KB
+  REVIEW: 'review',    // Review/update existing KB content
+};
+
+// Action status types for identified actions
+export const ActionStatus = {
+  PENDING: 'Pending',
+  DONE: 'Done',
+  REJECTED: 'Rejected',
+};
+
+// Action types for identified actions (based on bucket mapping)
+export const ActionType = {
+  UPDATE_KB: 'update_kb',
+  FIX_CLOSURE_TAG: 'fix_closure_tag',
+  ATTACH_JIRA: 'attach_jira',
+  ATTACH_KB: 'attach_kb',
+  DRAFT_KB: 'draft_kb',
+  SOFTWARE_UPDATE: 'software_update',
+  IN_PRODUCT_GUARDRAILS: 'in_product_guardrails',
+  KB_DOCUMENTATION_UPDATE: 'kb_documentation_update',
+  RCA_NEEDED: 'rca_needed',
+  NO_ACTION_NUTANIX: 'no_action_nutanix',
+  NO_ACTION_NEEDED: 'no_action_needed',
 };
 
 export const mockCases = [
@@ -46,6 +83,29 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Outdated KB article'],
     createdAt: '2026-01-14T08:30:00Z',
     closedAt: '2026-01-20T16:45:00Z',
+    identifiedActions: [
+      {
+        id: 'action-001-1',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-9876',
+        recommendedChange: 'KB-12345',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-001-2',
+        actionType: ActionType.FIX_CLOSURE_TAG,
+        currentState: 'Prism Central - Others',
+        recommendedChange: 'Prism Central - PE-PC Connection',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-001-3',
+        actionType: ActionType.SOFTWARE_UPDATE,
+        currentState: 'AOS 6.5.2',
+        recommendedChange: 'Upgrade to AOS 6.5.4 (fix included)',
+        status: ActionStatus.DONE,
+      },
+    ],
   },
   {
     id: 'case-002',
@@ -74,6 +134,29 @@ export const mockCases = [
     issues: ['Missing KB article'],
     createdAt: '2026-01-20T10:15:00Z',
     closedAt: '2026-01-24T14:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-002-1',
+        actionType: ActionType.ATTACH_KB,
+        currentState: 'Not attached',
+        recommendedChange: 'KB-55432',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-002-2',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'Customer assistance case',
+        recommendedChange: 'Improve VM migration documentation',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-002-3',
+        actionType: ActionType.IN_PRODUCT_GUARDRAILS,
+        currentState: 'No storage validation',
+        recommendedChange: 'Add pre-migration storage checks',
+        status: ActionStatus.REJECTED,
+      },
+    ],
   },
   {
     id: 'case-003',
@@ -103,6 +186,36 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Missing JIRA ticket'],
     createdAt: '2026-01-25T11:45:00Z',
     closedAt: '2026-01-27T09:20:00Z',
+    identifiedActions: [
+      {
+        id: 'action-003-1',
+        actionType: ActionType.FIX_CLOSURE_TAG,
+        currentState: 'Prism Central - Upgrade',
+        recommendedChange: 'Prism Central - Memory Usage',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-003-2',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'Not attached',
+        recommendedChange: 'ENG-48923',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-003-3',
+        actionType: ActionType.RCA_NEEDED,
+        currentState: 'RCA Inconclusive',
+        recommendedChange: 'Complete root cause analysis',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-003-4',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'Memory tuning docs incomplete',
+        recommendedChange: 'Update PC memory guidelines',
+        status: ActionStatus.REJECTED,
+      },
+    ],
   },
   {
     id: 'case-004',
@@ -129,6 +242,15 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-10T09:00:00Z',
     closedAt: '2026-01-15T11:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-004-1',
+        actionType: ActionType.NO_ACTION_NUTANIX,
+        currentState: 'Customer environment issue',
+        recommendedChange: 'No action required on Nutanix end',
+        status: ActionStatus.DONE,
+      },
+    ],
   },
   {
     id: 'case-005',
@@ -159,6 +281,15 @@ export const mockCases = [
     issues: ['Wrong KB article', 'Wrong JIRA ticket'],
     createdAt: '2026-01-22T14:00:00Z',
     closedAt: '2026-01-25T16:45:00Z',
+    identifiedActions: [
+      {
+        id: 'action-005-1',
+        actionType: ActionType.NO_ACTION_NEEDED,
+        currentState: 'Issue self-resolved',
+        recommendedChange: 'No action needed',
+        status: ActionStatus.DONE,
+      },
+    ],
   },
   {
     id: 'case-006',
@@ -178,7 +309,8 @@ export const mockCases = [
       value: null,
       status: ValidationStatus.MISSING,
       suggestedValue: null,
-      reason: 'No KB article attached',
+      reason: 'Documentation needed for this feature',
+      actionType: KBActionType.DRAFT,
     },
     jiraTicket: {
       value: null,
@@ -189,6 +321,22 @@ export const mockCases = [
     issues: ['Missing KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-27T08:00:00Z',
     closedAt: '2026-01-28T10:15:00Z',
+    identifiedActions: [
+      {
+        id: 'action-006-1',
+        actionType: ActionType.DRAFT_KB,
+        currentState: 'No KB exists',
+        recommendedChange: 'Draft new KB for license activation',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-006-2',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'Documentation gap identified',
+        recommendedChange: 'Update licensing documentation',
+        status: ActionStatus.PENDING,
+      },
+    ],
   },
   {
     id: 'case-007',
@@ -216,6 +364,36 @@ export const mockCases = [
     issues: ['Wrong closed tag'],
     createdAt: '2026-01-05T22:30:00Z',
     closedAt: '2026-01-12T15:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-007-1',
+        actionType: ActionType.FIX_CLOSURE_TAG,
+        currentState: 'Prism Central - Stuck Task',
+        recommendedChange: 'Prism Central - PC Management',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-007-2',
+        actionType: ActionType.SOFTWARE_UPDATE,
+        currentState: 'AOS 6.5.1',
+        recommendedChange: 'Upgrade to AOS 6.5.3 (fix included)',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-007-3',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'ENG-45679 attached',
+        recommendedChange: 'Verify JIRA linkage',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-007-4',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'Maintenance mode docs',
+        recommendedChange: 'Add unexpected maintenance mode section',
+        status: ActionStatus.REJECTED,
+      },
+    ],
   },
   {
     id: 'case-008',
@@ -244,6 +422,15 @@ export const mockCases = [
     issues: ['Outdated KB article'],
     createdAt: '2026-01-26T07:30:00Z',
     closedAt: '2026-01-27T18:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-008-1',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-66778',
+        recommendedChange: 'KB-66779',
+        status: ActionStatus.PENDING,
+      },
+    ],
   },
   {
     id: 'case-009',
@@ -270,6 +457,7 @@ export const mockCases = [
       status: ValidationStatus.VALID,
     },
     issues: [],
+    identifiedActions: [],
   },
   {
     id: 'case-010',
@@ -298,6 +486,36 @@ export const mockCases = [
     issues: ['Missing KB article'],
     createdAt: '2026-01-23T16:00:00Z',
     closedAt: '2026-01-26T14:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-010-1',
+        actionType: ActionType.ATTACH_KB,
+        currentState: 'Not attached',
+        recommendedChange: 'KB-99001',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-010-2',
+        actionType: ActionType.SOFTWARE_UPDATE,
+        currentState: 'AOS 6.5.2',
+        recommendedChange: 'Upgrade to AOS 6.5.3 (GPU fix)',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-010-3',
+        actionType: ActionType.DRAFT_KB,
+        currentState: 'No GPU passthrough KB',
+        recommendedChange: 'Create GPU passthrough troubleshooting KB',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-010-4',
+        actionType: ActionType.IN_PRODUCT_GUARDRAILS,
+        currentState: 'No GPU compatibility check',
+        recommendedChange: 'Add pre-upgrade GPU validation',
+        status: ActionStatus.REJECTED,
+      },
+    ],
   },
   {
     id: 'case-011',
@@ -324,6 +542,7 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-27T09:00:00Z',
     closedAt: '2026-01-28T11:45:00Z',
+    identifiedActions: [],
   },
   {
     id: 'case-012',
@@ -355,6 +574,43 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Wrong KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-24T10:30:00Z',
     closedAt: '2026-01-27T16:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-012-1',
+        actionType: ActionType.FIX_CLOSURE_TAG,
+        currentState: 'Prism Central - CMSP - Upgrade',
+        recommendedChange: 'Prism Central - Upgrade',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-012-2',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-12121',
+        recommendedChange: 'KB-12122',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-012-3',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'Not attached',
+        recommendedChange: 'ENG-66778',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-012-4',
+        actionType: ActionType.IN_PRODUCT_GUARDRAILS,
+        currentState: 'No upgrade validation',
+        recommendedChange: 'Add pre-upgrade validation checks',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-012-5',
+        actionType: ActionType.SOFTWARE_UPDATE,
+        currentState: 'PC 2024.1',
+        recommendedChange: 'Upgrade to PC 2024.2.1 (fix included)',
+        status: ActionStatus.REJECTED,
+      },
+    ],
   },
   {
     id: 'case-013',
@@ -381,6 +637,15 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-21T13:00:00Z',
     closedAt: '2026-01-24T10:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-013-1',
+        actionType: ActionType.RCA_NEEDED,
+        currentState: 'RCA Inconclusive',
+        recommendedChange: 'Complete root cause analysis',
+        status: ActionStatus.PENDING,
+      },
+    ],
   },
   {
     id: 'case-014',
@@ -409,6 +674,15 @@ export const mockCases = [
     issues: ['Outdated KB article'],
     createdAt: '2026-01-26T11:00:00Z',
     closedAt: '2026-01-28T09:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-014-1',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-45678',
+        recommendedChange: 'KB-45680',
+        status: ActionStatus.PENDING,
+      },
+    ],
   },
   {
     id: 'case-015',
@@ -437,6 +711,36 @@ export const mockCases = [
     issues: ['Missing KB article'],
     createdAt: '2026-01-18T15:00:00Z',
     closedAt: '2026-01-22T12:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-015-1',
+        actionType: ActionType.DRAFT_KB,
+        currentState: 'No KB exists',
+        recommendedChange: 'Draft KB for PDF generation',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-015-2',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'Reporting docs incomplete',
+        recommendedChange: 'Add PDF generation documentation',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-015-3',
+        actionType: ActionType.IN_PRODUCT_GUARDRAILS,
+        currentState: 'No PDF error handling',
+        recommendedChange: 'Add PDF generation error messages',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-015-4',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'ENG-23456 attached',
+        recommendedChange: 'Verify JIRA is correctly linked',
+        status: ActionStatus.DONE,
+      },
+    ],
   },
   {
     id: 'case-016',
@@ -463,6 +767,7 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-28T12:00:00Z',
     closedAt: '2026-01-28T17:30:00Z',
+    identifiedActions: [],
   },
   {
     id: 'case-017',
@@ -491,6 +796,15 @@ export const mockCases = [
     issues: ['Missing JIRA ticket'],
     createdAt: '2026-01-15T09:30:00Z',
     closedAt: '2026-01-19T14:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-017-1',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'Not attached',
+        recommendedChange: 'ENG-45678',
+        status: ActionStatus.PENDING,
+      },
+    ],
   },
   {
     id: 'case-018',
@@ -522,6 +836,43 @@ export const mockCases = [
     issues: ['Wrong closed tag', 'Wrong KB article', 'Wrong JIRA ticket'],
     createdAt: '2026-01-25T14:00:00Z',
     closedAt: '2026-01-27T11:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-018-1',
+        actionType: ActionType.FIX_CLOSURE_TAG,
+        currentState: 'Prism Central - Upgrade',
+        recommendedChange: 'Prism Central - Others',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-018-2',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-78901',
+        recommendedChange: 'KB-78902',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-018-3',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'ENG-56789 (wrong)',
+        recommendedChange: 'ENG-56790',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-018-4',
+        actionType: ActionType.SOFTWARE_UPDATE,
+        currentState: 'AOS 6.5.1',
+        recommendedChange: 'Upgrade to AOS 6.5.3 (LCM fix)',
+        status: ActionStatus.REJECTED,
+      },
+      {
+        id: 'action-018-5',
+        actionType: ActionType.IN_PRODUCT_GUARDRAILS,
+        currentState: 'No timeout handling',
+        recommendedChange: 'Add LCM timeout recovery',
+        status: ActionStatus.PENDING,
+      },
+    ],
   },
   {
     id: 'case-019',
@@ -548,6 +899,7 @@ export const mockCases = [
     issues: [],
     createdAt: '2026-01-27T15:00:00Z',
     closedAt: '2026-01-28T08:45:00Z',
+    identifiedActions: [],
   },
   {
     id: 'case-020',
@@ -568,6 +920,7 @@ export const mockCases = [
       status: ValidationStatus.OUTDATED,
       suggestedValue: 'KB-90124',
       reason: 'New troubleshooting steps added',
+      actionType: KBActionType.UPDATE,
     },
     jiraTicket: {
       value: null,
@@ -578,6 +931,397 @@ export const mockCases = [
     issues: ['Outdated KB article', 'Missing JIRA ticket'],
     createdAt: '2026-01-16T17:00:00Z',
     closedAt: '2026-01-20T15:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-020-1',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-90123',
+        recommendedChange: 'KB-90124',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-020-2',
+        actionType: ActionType.RCA_NEEDED,
+        currentState: 'RCA Inconclusive',
+        recommendedChange: 'Complete root cause analysis',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-020-3',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'Not attached',
+        recommendedChange: 'Create new JIRA for LDAP pattern',
+        status: ActionStatus.REJECTED,
+      },
+      {
+        id: 'action-020-4',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'LDAP troubleshooting guide',
+        recommendedChange: 'Add intermittent sync failure section',
+        status: ActionStatus.PENDING,
+      },
+    ],
+  },
+  // Additional cases for KB action scenarios
+  {
+    id: 'case-021',
+    caseNumber: '02108001',
+    title: 'New feature: Custom dashboard widgets not saving',
+    bucket: 'Documentation Gap',
+    accountName: 'Innovation Labs',
+    owner: 'Alex Turner',
+    aosVersion: '6.5.3',
+    hypervisorVersion: 'AHV 20220304.350',
+    pcVersion: 'pc.2024.3',
+    closedTag: {
+      value: 'Prism Central - UI/UX',
+      status: ValidationStatus.VALID,
+    },
+    kbArticle: {
+      value: null,
+      status: ValidationStatus.MISSING,
+      suggestedValue: null,
+      reason: 'New feature - no existing KB covers this functionality',
+      actionType: KBActionType.DRAFT,
+    },
+    jiraTicket: {
+      value: 'ENG-78901',
+      status: ValidationStatus.VALID,
+    },
+    issues: ['Missing KB article - needs drafting'],
+    createdAt: '2026-01-25T09:00:00Z',
+    closedAt: '2026-01-28T14:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-021-1',
+        actionType: ActionType.DRAFT_KB,
+        currentState: 'No KB exists',
+        recommendedChange: 'Draft KB for custom widgets',
+        status: ActionStatus.PENDING,
+      },
+    ],
+  },
+  {
+    id: 'case-022',
+    caseNumber: '02108002',
+    title: 'Storage container replication delay',
+    bucket: 'Bug/Improvement',
+    accountName: 'DataVault Systems',
+    owner: 'Maria Santos',
+    aosVersion: '6.5.2',
+    hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.2',
+    closedTag: {
+      value: 'Prism Central - Data Protection',
+      status: ValidationStatus.VALID,
+    },
+    kbArticle: {
+      value: 'KB-45123',
+      status: ValidationStatus.WRONG,
+      suggestedValue: null,
+      reason: 'KB content is outdated and needs review for accuracy',
+      actionType: KBActionType.REVIEW,
+    },
+    jiraTicket: {
+      value: 'ENG-89012',
+      status: ValidationStatus.VALID,
+    },
+    issues: ['KB needs review and update'],
+    createdAt: '2026-01-24T11:00:00Z',
+    closedAt: '2026-01-27T16:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-022-1',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'KB-45123 needs review',
+        recommendedChange: 'Review and update KB content',
+        status: ActionStatus.PENDING,
+      },
+    ],
+  },
+  {
+    id: 'case-023',
+    caseNumber: '02108003',
+    title: 'Networking VLAN tagging issue on AHV',
+    bucket: 'Customer Assistance',
+    accountName: 'NetFlow Corp',
+    owner: 'James Wilson',
+    aosVersion: '6.5.1',
+    hypervisorVersion: 'AHV 20220304.336',
+    pcVersion: 'pc.2024.1',
+    closedTag: {
+      value: 'Prism Central - Networking',
+      status: ValidationStatus.VALID,
+    },
+    kbArticle: {
+      value: null,
+      status: ValidationStatus.MISSING,
+      suggestedValue: 'KB-67890',
+      reason: 'Existing KB covers VLAN configuration',
+      actionType: KBActionType.ATTACH,
+    },
+    jiraTicket: {
+      value: 'ENG-34567',
+      status: ValidationStatus.VALID,
+    },
+    issues: ['Missing KB article'],
+    createdAt: '2026-01-22T08:30:00Z',
+    closedAt: '2026-01-25T12:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-023-1',
+        actionType: ActionType.ATTACH_KB,
+        currentState: 'Not attached',
+        recommendedChange: 'KB-67890',
+        status: ActionStatus.PENDING,
+      },
+    ],
+  },
+  {
+    id: 'case-024',
+    caseNumber: '02108004',
+    title: 'Prism Central scale-out deployment failure',
+    bucket: 'Bug/Improvement',
+    accountName: 'Enterprise Solutions Inc',
+    owner: 'Robert Chen',
+    aosVersion: '6.5.2.1',
+    hypervisorVersion: 'ESXi 8.0',
+    pcVersion: 'pc.2024.2',
+    closedTag: {
+      value: 'Prism Central - Scale Out',
+      status: ValidationStatus.WRONG,
+      suggestedValue: 'Prism Central - Install/Deploy',
+    },
+    kbArticle: {
+      value: 'KB-23456',
+      status: ValidationStatus.OUTDATED,
+      suggestedValue: null,
+      reason: 'KB needs to be reviewed and updated for PC 2024.2 changes',
+      actionType: KBActionType.REVIEW,
+    },
+    jiraTicket: {
+      value: 'ENG-56789',
+      status: ValidationStatus.VALID,
+    },
+    issues: ['Wrong closed tag', 'KB needs review'],
+    createdAt: '2026-01-26T14:00:00Z',
+    closedAt: '2026-01-28T10:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-024-1',
+        actionType: ActionType.FIX_CLOSURE_TAG,
+        currentState: 'Prism Central - Scale Out',
+        recommendedChange: 'Prism Central - Install/Deploy',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-024-2',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'KB-23456 outdated',
+        recommendedChange: 'Update KB for PC 2024.2',
+        status: ActionStatus.PENDING,
+      },
+    ],
+  },
+  {
+    id: 'case-025',
+    caseNumber: '02108005',
+    title: 'Flow microsegmentation rules not applying',
+    bucket: 'Customer Assistance',
+    accountName: 'SecureNet Financial',
+    owner: 'Diana Ross',
+    aosVersion: '6.5.2',
+    hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.1',
+    closedTag: {
+      value: 'Prism Central - Flow',
+      status: ValidationStatus.VALID,
+    },
+    kbArticle: {
+      value: 'KB-34567',
+      status: ValidationStatus.VALID,
+    },
+    jiraTicket: {
+      value: 'ENG-67890',
+      status: ValidationStatus.VALID,
+    },
+    issues: [],
+    createdAt: '2026-01-23T10:00:00Z',
+    closedAt: '2026-01-26T15:00:00Z',
+    identifiedActions: [],
+  },
+  {
+    id: 'case-026',
+    caseNumber: '02108006',
+    title: 'Calm blueprint deployment timeout',
+    bucket: 'Documentation Gap',
+    accountName: 'DevOps Masters',
+    owner: 'Kevin Park',
+    aosVersion: '6.5.2',
+    hypervisorVersion: 'AHV 20220304.342',
+    pcVersion: 'pc.2024.2',
+    closedTag: {
+      value: 'Prism Central - Calm',
+      status: ValidationStatus.VALID,
+    },
+    kbArticle: {
+      value: null,
+      status: ValidationStatus.MISSING,
+      suggestedValue: null,
+      reason: 'No KB exists for Calm timeout troubleshooting - draft needed',
+      actionType: KBActionType.DRAFT,
+    },
+    jiraTicket: {
+      value: 'ENG-78902',
+      status: ValidationStatus.VALID,
+    },
+    issues: ['Missing KB article - needs drafting'],
+    createdAt: '2026-01-27T13:00:00Z',
+    closedAt: '2026-01-28T17:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-026-1',
+        actionType: ActionType.DRAFT_KB,
+        currentState: 'No KB exists',
+        recommendedChange: 'Draft KB for Calm timeouts',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-026-2',
+        actionType: ActionType.IN_PRODUCT_GUARDRAILS,
+        currentState: 'No timeout warnings',
+        recommendedChange: 'Add deployment timeout warnings',
+        status: ActionStatus.REJECTED,
+      },
+      {
+        id: 'action-026-3',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'Calm blueprint docs',
+        recommendedChange: 'Add timeout troubleshooting section',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-026-4',
+        actionType: ActionType.SOFTWARE_UPDATE,
+        currentState: 'PC 2024.2',
+        recommendedChange: 'Upgrade to PC 2024.3 (timeout fix)',
+        status: ActionStatus.PENDING,
+      },
+    ],
+  },
+  {
+    id: 'case-027',
+    caseNumber: '02108007',
+    title: 'Objects S3 bucket creation fails with permission error',
+    bucket: 'Bug/Improvement',
+    accountName: 'CloudFirst Storage',
+    owner: 'Emma Thompson',
+    aosVersion: '6.5.2.1',
+    hypervisorVersion: 'AHV 20220304.345',
+    pcVersion: 'pc.2024.2',
+    closedTag: {
+      value: 'Prism Central - Objects',
+      status: ValidationStatus.WRONG,
+      suggestedValue: 'Prism Central - CMSP - IAM',
+    },
+    kbArticle: {
+      value: 'KB-56789',
+      status: ValidationStatus.WRONG,
+      suggestedValue: 'KB-56790',
+      reason: 'Wrong KB - use the IAM-specific troubleshooting guide',
+      actionType: KBActionType.UPDATE,
+    },
+    jiraTicket: {
+      value: null,
+      status: ValidationStatus.MISSING,
+      suggestedValue: 'ENG-89013',
+      reason: 'Related JIRA exists for IAM permission issues',
+    },
+    issues: ['Wrong closed tag', 'Wrong KB article', 'Missing JIRA ticket'],
+    createdAt: '2026-01-26T09:00:00Z',
+    closedAt: '2026-01-28T11:30:00Z',
+    identifiedActions: [
+      {
+        id: 'action-027-1',
+        actionType: ActionType.FIX_CLOSURE_TAG,
+        currentState: 'Prism Central - Objects',
+        recommendedChange: 'Prism Central - CMSP - IAM',
+        status: ActionStatus.DONE,
+      },
+      {
+        id: 'action-027-2',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-56789',
+        recommendedChange: 'KB-56790',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-027-3',
+        actionType: ActionType.ATTACH_JIRA,
+        currentState: 'Not attached',
+        recommendedChange: 'ENG-89013',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-027-4',
+        actionType: ActionType.IN_PRODUCT_GUARDRAILS,
+        currentState: 'No IAM permission warnings',
+        recommendedChange: 'Add S3 bucket permission validation',
+        status: ActionStatus.REJECTED,
+      },
+      {
+        id: 'action-027-5',
+        actionType: ActionType.KB_DOCUMENTATION_UPDATE,
+        currentState: 'IAM docs incomplete',
+        recommendedChange: 'Update Objects IAM troubleshooting guide',
+        status: ActionStatus.PENDING,
+      },
+    ],
+  },
+  {
+    id: 'case-028',
+    caseNumber: '02108008',
+    title: 'Files server analytics dashboard empty',
+    bucket: 'RCA-Inconclusive',
+    accountName: 'MediaStream Inc',
+    owner: 'Frank Miller',
+    aosVersion: '6.5.2',
+    hypervisorVersion: 'ESXi 7.0 U3',
+    pcVersion: 'pc.2024.1',
+    closedTag: {
+      value: 'Prism Central - Files',
+      status: ValidationStatus.VALID,
+    },
+    kbArticle: {
+      value: 'KB-67891',
+      status: ValidationStatus.OUTDATED,
+      suggestedValue: 'KB-67892',
+      reason: 'Updated KB available with new analytics configuration steps',
+      actionType: KBActionType.UPDATE,
+    },
+    jiraTicket: {
+      value: 'ENG-90123',
+      status: ValidationStatus.VALID,
+    },
+    issues: ['Outdated KB article'],
+    createdAt: '2026-01-25T15:00:00Z',
+    closedAt: '2026-01-28T09:00:00Z',
+    identifiedActions: [
+      {
+        id: 'action-028-1',
+        actionType: ActionType.UPDATE_KB,
+        currentState: 'KB-67891',
+        recommendedChange: 'KB-67892',
+        status: ActionStatus.PENDING,
+      },
+      {
+        id: 'action-028-2',
+        actionType: ActionType.RCA_NEEDED,
+        currentState: 'RCA Inconclusive',
+        recommendedChange: 'Complete root cause analysis',
+        status: ActionStatus.PENDING,
+      },
+    ],
   },
 ];
 
