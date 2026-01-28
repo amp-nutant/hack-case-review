@@ -1,3 +1,26 @@
+// All available buckets for filtering
+export const ALL_BUCKETS = [
+  { key: 'bug_improvement', label: 'Bug/Improvement', fill: '#e67e5a' },
+  { key: 'customer_assistance', label: 'Customer Assistance', fill: '#f59e42' },
+  { key: 'rca_inconclusive', label: 'RCA-Inconclusive', fill: '#eab308' },
+  { key: 'cx_environment', label: 'Cx Environment', fill: '#34a88f' },
+  { key: 'issue_self_resolved', label: 'Issue Self-Resolved', fill: '#1b6dc6' },
+  { key: 'documentation_gap', label: 'Documentation Gap', fill: '#8b5cf6' },
+  { key: 'duplicate_invalid', label: 'Duplicate/Invalid', fill: '#9aa5b5' },
+];
+
+// All available components for filtering
+export const ALL_COMPONENTS = [
+  { key: 'prism_central', label: 'Prism Central', fill: '#e67e5a' },
+  { key: 'lcm', label: 'LCM', fill: '#f59e42' },
+  { key: 'ahv', label: 'AHV', fill: '#eab308' },
+  { key: 'storage', label: 'Storage', fill: '#34a88f' },
+  { key: 'networking', label: 'Networking', fill: '#1b6dc6' },
+  { key: 'data_protection', label: 'Data Protection', fill: '#8b5cf6' },
+  { key: 'files', label: 'Files', fill: '#ec4899' },
+  { key: 'objects', label: 'Objects', fill: '#06b6d4' },
+];
+
 export const mockReports = [
   {
     id: 'demo-report-1',
@@ -8,7 +31,16 @@ export const mockReports = [
     createdAt: '2025-12-15T10:30:00Z',
     updatedAt: '2025-12-15T11:45:00Z',
     primaryAccount: 'Global Logistics Co.',
-    topIssues: ['API Latency', 'Timeout'],
+    topBuckets: [
+      { name: 'Bug/Improvement', count: 45, fill: '#e67e5a' },
+      { name: 'Customer Assistance', count: 38, fill: '#f59e42' },
+      { name: 'RCA-Inconclusive', count: 28, fill: '#eab308' },
+    ],
+    topComponents: [
+      { name: 'Prism Central', count: 52, fill: '#e67e5a' },
+      { name: 'LCM', count: 34, fill: '#f59e42' },
+      { name: 'AHV', count: 28, fill: '#eab308' },
+    ],
     summary: {
       totalCases: 156,
       openCases: 45,
@@ -27,7 +59,16 @@ export const mockReports = [
     createdAt: '2025-11-28T14:20:00Z',
     updatedAt: '2025-11-28T16:00:00Z',
     primaryAccount: 'Enterprise Wide',
-    topIssues: ['UI Consistency', 'Legacy Code'],
+    topBuckets: [
+      { name: 'Documentation Gap', count: 68, fill: '#8b5cf6' },
+      { name: 'Bug/Improvement', count: 55, fill: '#e67e5a' },
+      { name: 'Customer Assistance', count: 42, fill: '#f59e42' },
+    ],
+    topComponents: [
+      { name: 'Storage', count: 78, fill: '#34a88f' },
+      { name: 'Networking', count: 65, fill: '#1b6dc6' },
+      { name: 'Prism Central', count: 40, fill: '#e67e5a' },
+    ],
     summary: {
       totalCases: 203,
       openCases: 32,
@@ -46,7 +87,14 @@ export const mockReports = [
     createdAt: '2025-11-02T09:00:00Z',
     updatedAt: '2025-11-02T09:15:00Z',
     primaryAccount: 'TechFlow Inc.',
-    topIssues: ['Feature Request', 'Usability'],
+    topBuckets: [
+      { name: 'Customer Assistance', count: 120, fill: '#f59e42' },
+      { name: 'Cx Environment', count: 95, fill: '#34a88f' },
+    ],
+    topComponents: [
+      { name: 'LCM', count: 150, fill: '#f59e42' },
+      { name: 'AHV', count: 100, fill: '#eab308' },
+    ],
     summary: null,
   },
   {
@@ -58,7 +106,16 @@ export const mockReports = [
     createdAt: '2025-12-01T08:00:00Z',
     updatedAt: '2025-12-01T09:30:00Z',
     primaryAccount: 'Apex Retail',
-    topIssues: ['Data Loss', 'Escalations'],
+    topBuckets: [
+      { name: 'Bug/Improvement', count: 18, fill: '#e67e5a' },
+      { name: 'RCA-Inconclusive', count: 6, fill: '#eab308' },
+      { name: 'Customer Assistance', count: 4, fill: '#f59e42' },
+    ],
+    topComponents: [
+      { name: 'Data Protection', count: 12, fill: '#8b5cf6' },
+      { name: 'Storage', count: 10, fill: '#34a88f' },
+      { name: 'Files', count: 6, fill: '#ec4899' },
+    ],
     summary: {
       totalCases: 28,
       openCases: 5,
@@ -77,7 +134,16 @@ export const mockReports = [
     createdAt: '2025-10-12T12:00:00Z',
     updatedAt: '2025-10-12T12:45:00Z',
     primaryAccount: 'Northwind Partners',
-    topIssues: ['Configuration', 'Access'],
+    topBuckets: [
+      { name: 'Customer Assistance', count: 125, fill: '#f59e42' },
+      { name: 'Documentation Gap', count: 87, fill: '#8b5cf6' },
+      { name: 'Cx Environment', count: 65, fill: '#34a88f' },
+    ],
+    topComponents: [
+      { name: 'Prism Central', count: 140, fill: '#e67e5a' },
+      { name: 'Networking', count: 95, fill: '#1b6dc6' },
+      { name: 'LCM', count: 52, fill: '#f59e42' },
+    ],
     summary: { totalCases: 312 },
   },
   {
@@ -89,7 +155,16 @@ export const mockReports = [
     createdAt: '2025-09-28T09:15:00Z',
     updatedAt: '2025-09-28T10:05:00Z',
     primaryAccount: 'BluePeak Systems',
-    topIssues: ['Stability', 'Performance'],
+    topBuckets: [
+      { name: 'Bug/Improvement', count: 42, fill: '#e67e5a' },
+      { name: 'RCA-Inconclusive', count: 28, fill: '#eab308' },
+      { name: 'Issue Self-Resolved', count: 15, fill: '#1b6dc6' },
+    ],
+    topComponents: [
+      { name: 'AHV', count: 38, fill: '#eab308' },
+      { name: 'Storage', count: 32, fill: '#34a88f' },
+      { name: 'Objects', count: 18, fill: '#06b6d4' },
+    ],
     summary: { totalCases: 97 },
   },
   {
@@ -101,7 +176,14 @@ export const mockReports = [
     createdAt: '2025-08-22T15:10:00Z',
     updatedAt: '2025-08-22T15:20:00Z',
     primaryAccount: 'Contoso FinTech',
-    topIssues: ['Timeout', 'Retries'],
+    topBuckets: [
+      { name: 'Bug/Improvement', count: 32, fill: '#e67e5a' },
+      { name: 'Customer Assistance', count: 20, fill: '#f59e42' },
+    ],
+    topComponents: [
+      { name: 'Networking', count: 28, fill: '#1b6dc6' },
+      { name: 'Prism Central', count: 22, fill: '#e67e5a' },
+    ],
     summary: null,
   },
   {
@@ -113,7 +195,16 @@ export const mockReports = [
     createdAt: '2025-07-18T11:05:00Z',
     updatedAt: '2025-07-18T11:55:00Z',
     primaryAccount: 'Globex Corp.',
-    topIssues: ['Compatibility', 'Documentation'],
+    topBuckets: [
+      { name: 'Documentation Gap', count: 72, fill: '#8b5cf6' },
+      { name: 'Customer Assistance', count: 58, fill: '#f59e42' },
+      { name: 'Cx Environment', count: 38, fill: '#34a88f' },
+    ],
+    topComponents: [
+      { name: 'LCM', count: 85, fill: '#f59e42' },
+      { name: 'AHV', count: 55, fill: '#eab308' },
+      { name: 'Prism Central', count: 32, fill: '#e67e5a' },
+    ],
     summary: { totalCases: 188 },
   },
   {
@@ -125,7 +216,16 @@ export const mockReports = [
     createdAt: '2026-01-20T09:00:00Z',
     updatedAt: '2026-01-20T09:15:00Z',
     primaryAccount: 'Field Ops',
-    topIssues: ['Usability', 'API Latency'],
+    topBuckets: [
+      { name: 'Customer Assistance', count: 22, fill: '#f59e42' },
+      { name: 'Bug/Improvement', count: 15, fill: '#e67e5a' },
+      { name: 'Issue Self-Resolved', count: 10, fill: '#1b6dc6' },
+    ],
+    topComponents: [
+      { name: 'Prism Central', count: 20, fill: '#e67e5a' },
+      { name: 'Storage', count: 15, fill: '#34a88f' },
+      { name: 'Files', count: 8, fill: '#ec4899' },
+    ],
     summary: { totalCases: 47 },
   },
   {
@@ -137,7 +237,16 @@ export const mockReports = [
     createdAt: '2025-06-04T08:40:00Z',
     updatedAt: '2025-06-04T09:10:00Z',
     primaryAccount: 'Redwood Health',
-    topIssues: ['Auth', 'Audit Logs'],
+    topBuckets: [
+      { name: 'Bug/Improvement', count: 35, fill: '#e67e5a' },
+      { name: 'Documentation Gap', count: 25, fill: '#8b5cf6' },
+      { name: 'Customer Assistance', count: 16, fill: '#f59e42' },
+    ],
+    topComponents: [
+      { name: 'Data Protection', count: 32, fill: '#8b5cf6' },
+      { name: 'Networking', count: 28, fill: '#1b6dc6' },
+      { name: 'Prism Central', count: 16, fill: '#e67e5a' },
+    ],
     summary: { totalCases: 76 },
   },
   {
@@ -149,7 +258,16 @@ export const mockReports = [
     createdAt: '2025-05-14T10:25:00Z',
     updatedAt: '2025-05-14T10:55:00Z',
     primaryAccount: 'Retail Direct',
-    topIssues: ['UI Consistency', 'Crashes'],
+    topBuckets: [
+      { name: 'Bug/Improvement', count: 58, fill: '#e67e5a' },
+      { name: 'Customer Assistance', count: 45, fill: '#f59e42' },
+      { name: 'Cx Environment', count: 28, fill: '#34a88f' },
+    ],
+    topComponents: [
+      { name: 'Prism Central', count: 65, fill: '#e67e5a' },
+      { name: 'AHV', count: 42, fill: '#eab308' },
+      { name: 'Storage', count: 25, fill: '#34a88f' },
+    ],
     summary: { totalCases: 142 },
   },
   {
@@ -161,7 +279,16 @@ export const mockReports = [
     createdAt: '2025-04-02T13:00:00Z',
     updatedAt: '2025-04-02T13:25:00Z',
     primaryAccount: 'Operations',
-    topIssues: ['Invoices', 'Feature Request'],
+    topBuckets: [
+      { name: 'Customer Assistance', count: 95, fill: '#f59e42' },
+      { name: 'Documentation Gap', count: 68, fill: '#8b5cf6' },
+      { name: 'Duplicate/Invalid', count: 38, fill: '#9aa5b5' },
+    ],
+    topComponents: [
+      { name: 'Prism Central', count: 88, fill: '#e67e5a' },
+      { name: 'LCM', count: 72, fill: '#f59e42' },
+      { name: 'Networking', count: 45, fill: '#1b6dc6' },
+    ],
     summary: { totalCases: 221 },
   },
 ];
