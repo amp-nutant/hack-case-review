@@ -14,6 +14,7 @@ import {
   FlexItem,
   Divider,
 } from '@nutanix-ui/prism-reactjs';
+import { message } from 'antd';
 import * as XLSX from 'xlsx';
 import { uploadReport } from '../../redux/slices/reportsSlice';
 import styles from './UploadData.module.css';
@@ -31,7 +32,9 @@ function UploadData() {
   const [previewRows, setPreviewRows] = useState([]);
   const [isParsing, setIsParsing] = useState(false);
   const [previewError, setPreviewError] = useState('');
+  const [isProceeding, setIsProceeding] = useState(false);
   const fileInputRef = useRef(null);
+  const proceedTimeoutRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { uploading, error } = useSelector(state => state.reports);
@@ -66,6 +69,7 @@ function UploadData() {
 
     try {
       const result = await dispatch(uploadReport(selectedFile)).unwrap();
+      message.success('Report uploaded successfully.');
       navigate(`/dashboard/${result.id}/action-center`);
     } catch {
       // For demo purposes, navigate anyway with a mock ID
@@ -77,10 +81,33 @@ function UploadData() {
     fileInputRef.current?.click();
   };
 
-  const canProceed = Boolean(selectedFile);
+  const isLeftPanelComplete =
+    Boolean(reportName.trim())
+    && Boolean(reportDescription.trim())
+    && Boolean(reportComponent.trim())
+    && Boolean(dateRangeStart)
+    && Boolean(dateRangeEnd)
+    && Boolean(accountName.trim());
+  const canProceed = isLeftPanelComplete || Boolean(selectedFile);
   const showPreview = Boolean(selectedFile);
   const previewRowLimit = 5;
   const previewSampleRows = previewRows.slice(0, previewRowLimit);
+
+  const handleProceed = () => {
+    if (!canProceed || isProceeding) return;
+    setIsProceeding(true);
+    if (proceedTimeoutRef.current) {
+      clearTimeout(proceedTimeoutRef.current);
+    }
+    proceedTimeoutRef.current = setTimeout(() => {
+      if (selectedFile) {
+        handleUpload();
+      } else {
+        navigate('/dashboard/demo-report-1');
+      }
+      setIsProceeding(false);
+    }, 10000);
+  };
 
   const parseCsvRows = text => {
     const rows = [];
@@ -184,8 +211,20 @@ function UploadData() {
     }
   }, [selectedFile]);
 
+  useEffect(() => () => {
+    if (proceedTimeoutRef.current) {
+      clearTimeout(proceedTimeoutRef.current);
+    }
+  }, []);
+
   return (
-    <div className={styles.uploadPage}>
+    <Loader
+      loading={isProceeding}
+      tip="Loading..."
+      aria-live="polite"
+      style={{ height: '100%' }}
+    >
+      <div className={styles.uploadPage}>
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderRow}>
           <Title size="h2" className={styles.pageTitle}>
@@ -328,7 +367,7 @@ function UploadData() {
         </div>
       </div>
 
-      {showPreview && (
+      {/* {showPreview && (
         <div className={styles.previewCard}>
           <div className={styles.previewHeader}>
             <div>
@@ -375,7 +414,7 @@ function UploadData() {
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       <div className={styles.bottomBar}>
         <div className={styles.helpText}>
@@ -389,8 +428,12 @@ function UploadData() {
           <Button type="secondary" onClick={() => navigate('/reports')}>
             Cancel
           </Button>
-          <Button type="primary" onClick={handleUpload} disabled={!canProceed || uploading}>
-            {uploading ? (
+          <Button
+            type="primary"
+            onClick={handleProceed}
+            disabled={!canProceed || uploading || isProceeding}
+          >
+            {uploading || isProceeding ? (
               <span className={styles.loaderInline}>
                 <Loader size="small" />
                 <span>Processing...</span>
@@ -402,13 +445,7 @@ function UploadData() {
         </div>
       </div>
 
-      {error && (
-        <TextLabel className={styles.errorText}>
-          Error: {typeof error === 'string' ? error : 'Upload failed'}
-        </TextLabel>
-      )}
-
-      <div className={styles.recentSection}>
+      {/* <div className={styles.recentSection}>
         <Title size="h4">Recently Connected Sources</Title>
         <div className={styles.recentGrid}>
           {[
@@ -425,8 +462,9 @@ function UploadData() {
             </div>
           ))}
         </div>
+      </div> */}
       </div>
-    </div>
+    </Loader>
   );
 }
 

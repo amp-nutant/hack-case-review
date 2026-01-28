@@ -1,10 +1,15 @@
 .uploadPage {
-  min-height: calc(100vh - 56px);
+  height: 100%;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto !important;
   padding: 40px 56px 56px !important;
   color: #111827;
+  overflow: hidden !important;
+}
+
+:global(body) {
+  overflow: hidden !important;
 }
 
 .pageHeader {
