@@ -17,6 +17,7 @@ import {
 import { message } from 'antd';
 import * as XLSX from 'xlsx';
 import { uploadReport } from '../../redux/slices/reportsSlice';
+import { analysisApi } from '../../services/analysisApi';
 import styles from './UploadData.module.css';
 
 function UploadData() {
@@ -81,6 +82,23 @@ function UploadData() {
     fileInputRef.current?.click();
   };
 
+  const handleCancel = () => {
+    setReportName('');
+    setReportDescription('');
+    setReportComponent('');
+    setDateRangeStart(null);
+    setDateRangeEnd(null);
+    setAccountName('');
+    setSelectedFile(null);
+    setPreviewHeaders([]);
+    setPreviewRows([]);
+    setPreviewError('');
+    setIsParsing(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const isLeftPanelComplete =
     Boolean(reportName.trim())
     && Boolean(reportDescription.trim())
@@ -99,13 +117,30 @@ function UploadData() {
     if (proceedTimeoutRef.current) {
       clearTimeout(proceedTimeoutRef.current);
     }
-    proceedTimeoutRef.current = setTimeout(() => {
-      if (selectedFile) {
-        handleUpload();
-      } else {
-        navigate('/dashboard/demo-report-1');
+    proceedTimeoutRef.current = setTimeout(async () => {
+      try {
+        if (selectedFile) {
+          await handleUpload();
+          return;
+        }
+
+        const response = await analysisApi.create({
+          name: reportName.trim(),
+          description: reportDescription.trim(),
+          account: accountName.trim(),
+          component: reportComponent.trim(),
+          startDate: dateRangeStart,
+          endDate: dateRangeEnd,
+          cases: [],
+        });
+
+        message.success('Analysis created successfully.');
+        navigate(`/dashboard/${response.data.id}/action-center`);
+      } catch {
+        message.error('Something went wrong!', 10);
+      } finally {
+        setIsProceeding(false);
       }
-      setIsProceeding(false);
     }, 10000);
   };
 
@@ -218,156 +253,161 @@ function UploadData() {
   }, []);
 
   return (
-    <Loader
-      loading={isProceeding}
-      tip="Loading..."
-      aria-live="polite"
-      style={{ height: '100%' }}
-    >
+    <Loader loading={isProceeding} tip="Loading..." aria-live="polite" style={{ height: '100%' }}>
       <div className={styles.uploadPage}>
-      <div className={styles.pageHeader}>
-        <div className={styles.pageHeaderRow}>
-          <Title size="h2" className={styles.pageTitle}>
-            Create New Report
-          </Title>
-          <Button type="primary" onClick={() => navigate('/reports')}>
-            My Reports
-          </Button>
-        </div>
-        <TextLabel type="secondary">
-          Select a data source to begin your case review and analysis.
-        </TextLabel>
-      </div>
-
-      <div className={styles.sourceCards}>
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIcon}>📤</div>
-            <div>
-              <Title size="h3">Select Data Source</Title>
-              <TextLabel type="secondary">Choose how you want to create this report.</TextLabel>
-            </div>
+        <div className={styles.pageHeader}>
+          <div className={styles.pageHeaderRow}>
+            <Title size="h2" className={styles.pageTitle}>
+              Create New Report
+            </Title>
+            <Button type="primary" onClick={() => navigate('/reports')}>
+              My Reports
+            </Button>
           </div>
+          <TextLabel type="secondary">
+            Select a data source to begin your case review and analysis.
+          </TextLabel>
+        </div>
 
-          <FlexLayout>
-            <FlexItem className={styles.leftPanel}>
-              <Title size="h2">Fetch Cases</Title>
-              <TextLabel type="secondary">Use filters to pull cases directly</TextLabel>
-              <Divider className={styles.sectionDivider} />
-              <FlexLayout alignItems="stretch" flexDirection="column" className={styles.inputStack}>
-                <FlexItem className={styles.inputGroup}>
-                  <TextLabel className={styles.inputLabel}>Name</TextLabel>
-                  <TextInput
-                    className={styles.textInput}
-                    value={reportName}
-                    onChange={e => setReportName(e.target.value)}
-                    placeholder="Add a report name"
-                  />
-                </FlexItem>
-                <FlexItem className={styles.inputGroup}>
-                  <TextLabel className={styles.inputLabel}>Description</TextLabel>
-                  <TextArea
-                    className={styles.textInput}
-                    value={reportDescription}
-                    onChange={e => setReportDescription(e.target.value)}
-                    placeholder="Add a short description"
-                    rows={3}
-                  />
-                </FlexItem>
-                <FlexItem className={styles.inputGroup}>
-                  <TextLabel className={styles.inputLabel}>Component</TextLabel>
-                  <TextInput
-                    className={styles.textInput}
-                    value={reportComponent}
-                    onChange={e => setReportComponent(e.target.value)}
-                    placeholder="e.g. Storage, Networking"
-                  />
-                </FlexItem>
-                <FlexItem className={styles.inputGroup}>
-                  <TextLabel className={styles.inputLabel}>Date Range</TextLabel>
-                  <FlexLayout alignItems="stretch" itemSpacing="15px" className={styles.inputStack}>
-                    <DatePicker
-                      oldDatePicker={false}
-                      onChange={date => setDateRangeStart(date)}
-                      value={dateRangeStart}
-                    />
-                    <DatePicker
-                      oldDatePicker={false}
-                      onChange={date => setDateRangeEnd(date)}
-                      value={dateRangeEnd}
-                    />
-                  </FlexLayout>
-                </FlexItem>
-                <FlexItem className={styles.inputGroup}>
-                  <TextLabel className={styles.inputLabel}>Account</TextLabel>
-                  <TextInput
-                    className={styles.textInput}
-                    value={accountName}
-                    onChange={e => setAccountName(e.target.value)}
-                    placeholder="Search account name"
-                  />
-                </FlexItem>
-              </FlexLayout>
-            </FlexItem>
-
-            <VerticalSeparator size="large" />
-
-            <FlexItem className={styles.rightPanel}>
-              <Title size="h2">Upload CSV File</Title>
-              <TextLabel type="secondary" className={styles.panelSubtext}>
-                Import local data from your computer.
-              </TextLabel>
-              <Divider className={styles.sectionDivider} />
-              <div
-                className={`${styles.dropZone} ${dragActive ? styles.active : ''} ${selectedFile ? styles.hasFile : ''}`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                onClick={handleBrowseClick}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.xlsx,.xls,.json"
-                  onChange={handleFileSelect}
-                  className={styles.fileInput}
-                />
-
-                {selectedFile ? (
-                  <div className={styles.dropContent}>
-                    <span className={styles.fileIcon}>📄</span>
-                    <TextLabel className={styles.fileName}>{selectedFile.name}</TextLabel>
-                    <TextLabel type="secondary">
-                      {(selectedFile.size / 1024).toFixed(2)} KB
-                    </TextLabel>
-                  </div>
-                ) : (
-                  <div className={styles.dropContent}>
-                    <span className={styles.uploadIcon}>☁️</span>
-                    <TextLabel>Drag and drop file here</TextLabel>
-                    <TextLabel type="secondary">
-                      or <span className={styles.browseLink}>Browse files</span>
-                    </TextLabel>
-                    <TextLabel type="secondary" className={styles.supportedFormats}>
-                      MAXIMUM SIZE: 50MB
-                    </TextLabel>
-                  </div>
-                )}
+        <div className={styles.sourceCards}>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIcon}>📤</div>
+              <div>
+                <Title size="h3">Select Data Source</Title>
+                <TextLabel type="secondary">Choose how you want to create this report.</TextLabel>
               </div>
+            </div>
 
-              {/* <div className={styles.alternateNote}>
+            <FlexLayout>
+              <FlexItem className={styles.leftPanel}>
+                <Title size="h2">Fetch Cases</Title>
+                <TextLabel type="secondary">
+                  Fill out a form to pull cases directly from Salesforce.
+                </TextLabel>
+                <Divider className={styles.sectionDivider} />
+                <FlexLayout
+                  alignItems="stretch"
+                  flexDirection="column"
+                  className={styles.inputStack}
+                >
+                  <FlexItem className={styles.inputGroup}>
+                    <TextLabel className={styles.inputLabel}>Name</TextLabel>
+                    <TextInput
+                      className={styles.textInput}
+                      value={reportName}
+                      onChange={e => setReportName(e.target.value)}
+                      placeholder="Add a report name"
+                    />
+                  </FlexItem>
+                  <FlexItem className={styles.inputGroup}>
+                    <TextLabel className={styles.inputLabel}>Description</TextLabel>
+                    <TextArea
+                      className={styles.textInput}
+                      value={reportDescription}
+                      onChange={e => setReportDescription(e.target.value)}
+                      placeholder="Add a short description"
+                      rows={3}
+                    />
+                  </FlexItem>
+                  <FlexItem className={styles.inputGroup}>
+                    <TextLabel className={styles.inputLabel}>Component</TextLabel>
+                    <TextInput
+                      className={styles.textInput}
+                      value={reportComponent}
+                      onChange={e => setReportComponent(e.target.value)}
+                      placeholder="e.g. Storage, Networking"
+                    />
+                  </FlexItem>
+                  <FlexItem className={styles.inputGroup}>
+                    <TextLabel className={styles.inputLabel}>Date Range</TextLabel>
+                    <FlexLayout
+                      alignItems="stretch"
+                      itemSpacing="15px"
+                      className={styles.inputStack}
+                    >
+                      <DatePicker
+                        oldDatePicker={false}
+                        onChange={date => setDateRangeStart(date)}
+                        value={dateRangeStart}
+                      />
+                      <DatePicker
+                        oldDatePicker={false}
+                        onChange={date => setDateRangeEnd(date)}
+                        value={dateRangeEnd}
+                      />
+                    </FlexLayout>
+                  </FlexItem>
+                  <FlexItem className={styles.inputGroup}>
+                    <TextLabel className={styles.inputLabel}>Account</TextLabel>
+                    <TextInput
+                      className={styles.textInput}
+                      value={accountName}
+                      onChange={e => setAccountName(e.target.value)}
+                      placeholder="Search account name"
+                    />
+                  </FlexItem>
+                </FlexLayout>
+              </FlexItem>
+
+              <VerticalSeparator size="large" />
+
+              <FlexItem className={styles.rightPanel}>
+                <Title size="h2">Upload CSV File</Title>
+                <TextLabel type="secondary" className={styles.panelSubtext}>
+                  Import local data from your computer.
+                </TextLabel>
+                <Divider className={styles.sectionDivider} />
+                <div
+                  className={`${styles.dropZone} ${dragActive ? styles.active : ''} ${selectedFile ? styles.hasFile : ''}`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                  onClick={handleBrowseClick}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.xlsx,.xls,.json"
+                    onChange={handleFileSelect}
+                    className={styles.fileInput}
+                  />
+
+                  {selectedFile ? (
+                    <div className={styles.dropContent}>
+                      <span className={styles.fileIcon}>📄</span>
+                      <TextLabel className={styles.fileName}>{selectedFile.name}</TextLabel>
+                      <TextLabel type="secondary">
+                        {(selectedFile.size / 1024).toFixed(2)} KB
+                      </TextLabel>
+                    </div>
+                  ) : (
+                    <div className={styles.dropContent}>
+                      <span className={styles.uploadIcon}>☁️</span>
+                      <TextLabel>Drag and drop file here</TextLabel>
+                      <TextLabel type="secondary">
+                        or <span className={styles.browseLink}>Browse files</span>
+                      </TextLabel>
+                      <TextLabel type="secondary" className={styles.supportedFormats}>
+                        MAXIMUM SIZE: 50MB
+                      </TextLabel>
+                    </div>
+                  )}
+                </div>
+
+                {/* <div className={styles.alternateNote}>
                 <span className={styles.infoIcon}>i</span>
                 <TextLabel type="secondary">
                   You can also connect using a Salesforce Report ID from your instance.
                 </TextLabel>
               </div> */}
-            </FlexItem>
-          </FlexLayout>
+              </FlexItem>
+            </FlexLayout>
+          </div>
         </div>
-      </div>
 
-      {/* {showPreview && (
+        {/* {showPreview && (
         <div className={styles.previewCard}>
           <div className={styles.previewHeader}>
             <div>
@@ -416,36 +456,36 @@ function UploadData() {
         </div>
       )} */}
 
-      <div className={styles.bottomBar}>
-        <div className={styles.helpText}>
-          <span className={styles.infoIcon}>?</span>
-          <TextLabel type="secondary">
-            Need help choosing? <span className={styles.link}>View documentation.</span>
-          </TextLabel>
+        <div className={styles.bottomBar}>
+          <div className={styles.helpText}>
+            <span className={styles.infoIcon}>?</span>
+            <TextLabel type="secondary">
+              Need help choosing? <span className={styles.link}>View documentation.</span>
+            </TextLabel>
+          </div>
+
+          <div className={styles.actions}>
+            <Button type="secondary" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleProceed}
+              disabled={!canProceed || uploading || isProceeding}
+            >
+              {uploading || isProceeding ? (
+                <span className={styles.loaderInline}>
+                  <Loader size="small" />
+                  <span>Processing...</span>
+                </span>
+              ) : (
+                'Proceed to Analysis'
+              )}
+            </Button>
+          </div>
         </div>
 
-        <div className={styles.actions}>
-          <Button type="secondary" onClick={() => navigate('/reports')}>
-            Cancel
-          </Button>
-          <Button
-            type="primary"
-            onClick={handleProceed}
-            disabled={!canProceed || uploading || isProceeding}
-          >
-            {uploading || isProceeding ? (
-              <span className={styles.loaderInline}>
-                <Loader size="small" />
-                <span>Processing...</span>
-              </span>
-            ) : (
-              'Proceed to Analysis'
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* <div className={styles.recentSection}>
+        {/* <div className={styles.recentSection}>
         <Title size="h4">Recently Connected Sources</Title>
         <div className={styles.recentGrid}>
           {[
