@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Select } from 'antd';
-import { mockCaseClusters } from '../../data/mockAnalysis';
+import analysisApi from '../../services/analysisApi';
 import styles from './ClusterView.module.css';
 
 const { Option } = Select;
@@ -36,28 +36,78 @@ const ICONS = {
   ),
 };
 
+const CLUSTER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#6b7280'];
+
+const getSeverity = (count) => {
+  if (count < 10) {
+    return 'low';
+  }
+  if (count < 25) {
+    return 'medium';
+  }
+  return 'high';
+};
+
 function ClusterView() {
-  useOutletContext(); // Available for future use
+  const { reportId } = useOutletContext();
   const [componentFilter, setComponentFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('30days');
+  const [clusters, setClusters] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadClusters = async () => {
+      try {
+        const response = await analysisApi.getClusters(reportId || 'latest');
+        const rawClusters = Array.isArray(response.data) ? response.data : [];
+
+        const mappedClusters = rawClusters.map((cluster, index) => {
+          const count = Number(cluster?.size ?? 0);
+          return {
+            id: cluster?._id ?? `${cluster?.representative_title || 'cluster'}-${index}`,
+            name: cluster?.representative_title || 'Untitled Cluster',
+            severity: getSeverity(count),
+            count,
+            component: cluster?.dominant_product || 'Unknown',
+            color: CLUSTER_COLORS[index % CLUSTER_COLORS.length],
+          };
+        });
+
+        if (isMounted) {
+          setClusters(mappedClusters);
+        }
+      } catch {
+        if (isMounted) {
+          setClusters([]);
+        }
+      }
+    };
+
+    loadClusters();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reportId]);
 
   const componentOptions = useMemo(() => {
-    const uniq = Array.from(new Set(mockCaseClusters.map((c) => c.component))).sort((a, b) =>
+    const uniq = Array.from(new Set(clusters.map((c) => c.component))).sort((a, b) =>
       a.localeCompare(b),
     );
     return [{ value: 'all', label: 'All Components' }, ...uniq.map((c) => ({ value: c, label: c }))];
-  }, []);
+  }, [clusters]);
 
   const filteredClusters = useMemo(() => {
     const byComponent =
       componentFilter === 'all'
-        ? mockCaseClusters
-        : mockCaseClusters.filter((c) => c.component === componentFilter);
+        ? clusters
+        : clusters.filter((c) => c.component === componentFilter);
 
     // Time filter is present for UI parity with the reference.
     // When real data includes timestamps, hook it up here.
     return byComponent;
-  }, [componentFilter]);
+  }, [componentFilter, clusters]);
 
   const severityClass = (severity) => {
     switch (severity) {
@@ -113,8 +163,6 @@ function ClusterView() {
         {/* Grid */}
         <div className={styles.clusterGrid}>
           {filteredClusters.map((cluster) => {
-            const trendIsUp = String(cluster.trend || '').trim().startsWith('+');
-            const trendText = String(cluster.trend || '').trim();
             return (
               <div
                 key={cluster.id}
@@ -147,11 +195,11 @@ function ClusterView() {
                     {ICONS.chip}
                     <span className={styles.metaText}>{cluster.component}</span>
                   </div>
-                  <div className={styles.metaItem}>
+                  {/* <div className={styles.metaItem}>
                     <span className={`${styles.trendText} ${trendIsUp ? styles.trendUp : styles.trendDown}`}>
                       {trendText}
                     </span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             );
