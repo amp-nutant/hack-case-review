@@ -10,6 +10,74 @@
  * 6. Bugs/Improvements without JIRA
  */
 
+import { formatActionsForLLM } from "../utils/dataFormatter.js";
+import { invokeLLMAPI, parseLLMJSONResponse } from "./llm.service.js";
+
+// ============================================================================
+// KB TITLE GENERATION PROMPTS
+// ============================================================================
+
+const KB_TITLE_GENERATION_SYSTEM_PROMPT = `You are an expert technical writer specializing in creating Knowledge Base article titles for enterprise software support.
+
+Your task is to generate a clear, descriptive KB article title based on a group of related support cases.
+
+Guidelines for KB titles:
+- Be specific and descriptive (e.g., "How to Resolve AHV Host Network Timeout During VM Migration")
+- Start with action-oriented words when appropriate: "How to", "Troubleshooting", "Configuring", "Understanding"
+- Include the product/component name when relevant
+- Keep titles between 8-15 words
+- Avoid vague terms like "issue", "problem" alone
+- Focus on the solution/topic rather than the symptom
+- Make it searchable - use keywords customers would search for
+
+Title formats by issue type:
+- Bug/Known Issue: "Known Issue: [Component] - [Symptom] [Version if applicable]"
+- How-to: "How to [Action] in [Product/Component]"
+- Troubleshooting: "Troubleshooting [Symptom] in [Product/Component]"
+- Configuration: "Configuring [Feature] in [Product/Component]"
+- FAQ: "[Product] - [Common Question Topic]"
+
+Return your response as JSON:
+{
+  "title": "<8-15 word KB article title>",
+  "articleType": "<how_to|troubleshooting|known_issue|configuration|faq>",
+  "keywords": ["keyword1", "keyword2", "keyword3"],
+  "summary": "<1-2 sentence description of what the KB would cover>"
+}`;
+
+/**
+ * Build user prompt for KB title generation
+ */
+function buildKBTitleGenerationPrompt(group) {
+  const { product, skill, bucket, cases } = group;
+  
+  // Sample up to 10 cases for context
+  const sampleCases = cases.slice(0, 10);
+  
+  const caseDetails = sampleCases.map((c, idx) => {
+    const parts = [`Case ${idx + 1}:`];
+    if (c.subject) parts.push(`  Subject: ${c.subject}`);
+    if (c.resolutionNotes) parts.push(`  Resolution: ${c.resolutionNotes.substring(0, 300)}${c.resolutionNotes.length > 300 ? '...' : ''}`);
+    if (c.actionsTaken && c.actionsTaken !== 'No specific actions documented.') {
+      parts.push(`  Actions Taken:\n${c.actionsTaken.split('\n').map(a => `    ${a}`).join('\n')}`);
+    }
+    return parts.join('\n');
+  }).join('\n\n');
+
+  return `Generate a KB article title for the following group of ${cases.length} related support cases.
+
+Context:
+- Product: ${product}
+- Component/Skill: ${skill}
+- Case Category: ${bucket}
+- Total Cases: ${cases.length}
+
+Sample Cases:
+${caseDetails}
+
+Based on these cases, generate an appropriate KB article title that would help customers find solutions to similar issues.`;
+}
+
 // ============================================================================
 // 1. WRONG CLOSED TAGS
 // ============================================================================
@@ -290,25 +358,35 @@ export function getKBCreationRecommendations(caseList, minCasesForRecommendation
         commonSubjects: [],
       };
     }
+
+    let closureSummary = [...caseDetail.conversation].reverse().find(
+      (message) => message.direction === 'outbound' && message.subject?.toLowerCase()?.includes('closure ')
+    );
+    closureSummary = closureSummary?.content;
+    closureSummary = formatActionsForLLM(closureSummary);
     
     groupedCases[groupKey].cases.push({
       caseNumber: caseDetail.caseNumber,
       subject: caseDetail.caseInfo?.subject,
       resolutionNotes: caseDetail.resolution?.resolutionNotes,
+      actionsTaken: closureSummary,
     });
     groupedCases[groupKey].caseCount += 1;
   }
 
   // Filter groups with enough cases and sort by count
-  const recommendations = Object.values(groupedCases)
+  const filteredGroups = Object.values(groupedCases)
     .filter((g) => g.caseCount >= minCasesForRecommendation)
     .sort((a, b) => b.caseCount - a.caseCount)
-    .map((group) => ({
-      ...group,
-      suggestedKBTitle: generateSuggestedKBTitle(group),
-      impactScore: group.caseCount,
-      priority: group.caseCount > 10 ? 'high' : group.caseCount > 5 ? 'medium' : 'low',
-    }));
+    .slice(0, 15);
+
+  // Generate recommendations with fallback titles (sync version for initial response)
+  const recommendations = filteredGroups.map((group) => ({
+    ...group,
+    suggestedKBTitle: generateFallbackKBTitle(group).title,
+    impactScore: group.caseCount,
+    priority: group.caseCount > 10 ? 'high' : group.caseCount > 5 ? 'medium' : 'low',
+  }));
 
   return {
     category: 'kb_creation_recommendations',
@@ -316,26 +394,194 @@ export function getKBCreationRecommendations(caseList, minCasesForRecommendation
     count: recommendations.length,
     totalCasesAddressed: recommendations.reduce((sum, r) => sum + r.caseCount, 0),
     priority: recommendations.length > 0 && recommendations[0].caseCount > 5 ? 'high' : 'medium',
-    recommendations: recommendations.slice(0, 15),
+    recommendations,
+    // Include raw groups for async title generation
+    _groupsForTitleGeneration: filteredGroups,
     actionRequired: 'Create KB articles to reduce future case volume',
   };
 }
 
 /**
- * Generate a suggested KB title based on grouped cases
+ * Enhance KB recommendations with LLM-generated titles
+ * Call this separately after initial summary generation for async title generation
+ * 
+ * @param {Object} kbRecommendations - Output from getKBCreationRecommendations
+ * @param {Object} options - Processing options
+ * @returns {Promise<Object>} Enhanced recommendations with LLM-generated titles
  */
-function generateSuggestedKBTitle(group) {
-  const { product, skill, bucket } = group;
+export async function enhanceKBRecommendationsWithTitles(kbRecommendations, options = {}) {
+  const groups = kbRecommendations._groupsForTitleGeneration || kbRecommendations.recommendations;
   
-  if (bucket === 'Customer Questions') {
-    return `FAQ: ${product} - ${skill} Common Questions`;
-  } else if (bucket === 'Customer Assistance') {
-    return `How To: ${product} - ${skill} Configuration Guide`;
-  } else if (bucket === 'Bug') {
-    return `Known Issue: ${product} - ${skill} Troubleshooting`;
+  if (!groups || groups.length === 0) {
+    return kbRecommendations;
+  }
+
+  const enhancedGroups = await generateKBTitlesForGroups(groups, options);
+  
+  return {
+    ...kbRecommendations,
+    recommendations: enhancedGroups.map((group) => ({
+      product: group.product,
+      skill: group.skill,
+      bucket: group.bucket,
+      caseCount: group.caseCount,
+      cases: group.cases,
+      suggestedKB: group.suggestedKB,
+      suggestedKBTitle: group.suggestedKB?.title || group.suggestedKBTitle,
+      impactScore: group.caseCount,
+      priority: group.caseCount > 10 ? 'high' : group.caseCount > 5 ? 'medium' : 'low',
+    })),
+    titlesGenerated: true,
+  };
+}
+
+/**
+ * Generate a suggested KB title based on grouped cases using LLM
+ * 
+ * @param {Object} group - Group of cases with product, skill, bucket, and cases array
+ * @returns {Promise<Object>} Generated KB title and metadata
+ */
+async function generateSuggestedKBTitle(group) {
+  const { product, skill, bucket, cases } = group;
+  
+  // Fallback title if LLM fails
+  const fallbackTitle = generateFallbackKBTitle({ product, skill, bucket });
+  
+  if (!cases || cases.length === 0) {
+    return fallbackTitle;
+  }
+
+  try {
+    const userPrompt = buildKBTitleGenerationPrompt(group);
+    
+    const response = await invokeLLMAPI({
+      systemPrompt: KB_TITLE_GENERATION_SYSTEM_PROMPT,
+      userPrompt,
+      maxTokens: 512,
+      temperature: 0.4, // Balanced for creativity but consistency
+    });
+
+    const parsed = parseLLMJSONResponse(response);
+    
+    if (parsed.title) {
+      return {
+        title: parsed.title,
+        articleType: parsed.articleType || 'general',
+        keywords: parsed.keywords || [],
+        summary: parsed.summary || '',
+        generated: true,
+      };
+    }
+    
+    // Try to extract title from text response
+    const textTitle = extractTitleFromText(response.text || response.content);
+    if (textTitle) {
+      return {
+        title: textTitle,
+        articleType: 'general',
+        keywords: [],
+        summary: '',
+        generated: true,
+        extractedFromText: true,
+      };
+    }
+
+    return fallbackTitle;
+  } catch (error) {
+    console.error('Error generating KB title:', error.message);
+    return fallbackTitle;
+  }
+}
+
+/**
+ * Extract title from text response if JSON parsing fails
+ */
+function extractTitleFromText(text) {
+  if (!text) return null;
+  
+  // Look for title patterns
+  const patterns = [
+    /title["\s:]+["']?([^"'\n]{10,100})["']?/i,
+    /"([^"]{10,100})"/,
+    /^([A-Z][^.!?\n]{10,100})/m,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
   }
   
-  return `${product} - ${skill} Guide`;
+  return null;
+}
+
+/**
+ * Generate a fallback KB title without LLM
+ */
+function generateFallbackKBTitle({ product, skill, bucket }) {
+  let prefix;
+  
+  switch (bucket) {
+    case 'Customer Questions':
+      prefix = 'FAQ:';
+      break;
+    case 'Customer Assistance':
+      prefix = 'How to Configure';
+      break;
+    case 'Bug':
+      prefix = 'Known Issue:';
+      break;
+    case 'Improvement':
+      prefix = 'Feature Guide:';
+      break;
+    default:
+      prefix = 'Guide:';
+  }
+  
+  return {
+    title: `${prefix} ${product} - ${skill}`,
+    articleType: bucket === 'Bug' ? 'known_issue' : 'general',
+    keywords: [product, skill].filter(Boolean),
+    summary: '',
+    generated: false,
+  };
+}
+
+/**
+ * Generate KB titles for multiple groups in batch
+ * 
+ * @param {Array} groups - Array of case groups
+ * @param {Object} options - Processing options
+ * @returns {Promise<Array>} Array of groups with generated titles
+ */
+export async function generateKBTitlesForGroups(groups, options = {}) {
+  const { batchSize = 3, delayBetweenBatches = 1000 } = options;
+  const results = [];
+
+  for (let i = 0; i < groups.length; i += batchSize) {
+    const batch = groups.slice(i, i + batchSize);
+    
+    // Process batch in parallel
+    const batchResults = await Promise.all(
+      batch.map(async (group) => {
+        const kbTitle = await generateSuggestedKBTitle(group);
+        return {
+          ...group,
+          suggestedKB: kbTitle,
+        };
+      })
+    );
+    
+    results.push(...batchResults);
+    
+    // Delay between batches to avoid rate limiting
+    if (i + batchSize < groups.length) {
+      await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+    }
+  }
+
+  return results;
 }
 
 // ============================================================================
@@ -414,7 +660,7 @@ export function getCasesNeedingJIRACreation(caseList) {
  * @param {Object} options - Configuration options
  * @returns {Object} Complete action summary with all categories
  */
-export function generateActionSummary(caseList, options = {}) {
+export async function generateActionSummary(caseList, options = {}) {
   const { topN = 10, minCasesForKB = 3 } = options;
 
   const summary = {
@@ -438,7 +684,7 @@ export function generateActionSummary(caseList, options = {}) {
   };
 
   // Generate overall priority actions
-  summary.topPriorityActions = generateTopPriorityActions(summary);
+  summary.topPriorityActions = await generateTopPriorityActions(summary);
 
   return summary;
 }
@@ -446,7 +692,7 @@ export function generateActionSummary(caseList, options = {}) {
 /**
  * Generate top priority actions across all categories
  */
-function generateTopPriorityActions(summary) {
+async function generateTopPriorityActions(summary) {
   const actions = [];
 
   // High priority actions
@@ -480,11 +726,14 @@ function generateTopPriorityActions(summary) {
 
   if (summary.kbCreationRecommendations.recommendations.length > 0) {
     const topRec = summary.kbCreationRecommendations.recommendations[0];
+    const kbTitleResult = await generateSuggestedKBTitle(topRec);
+    const kbTitle = kbTitleResult.title || topRec.suggestedKBTitle;
     actions.push({
       priority: 'medium',
       category: 'kb_creation',
-      action: `Create KB for "${topRec.product} - ${topRec.skill}" (${topRec.caseCount} cases)`,
+      action: `Create KB for "${kbTitle}" (${topRec.caseCount} cases)`,
       cases: topRec.caseCount,
+      suggestedKB: kbTitleResult,
     });
   }
 
@@ -515,4 +764,6 @@ export default {
   getCasesWithMissingKB,
   getKBCreationRecommendations,
   getCasesNeedingJIRACreation,
+  generateKBTitlesForGroups,
+  enhanceKBRecommendationsWithTitles,
 };

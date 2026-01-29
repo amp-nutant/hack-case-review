@@ -275,7 +275,7 @@ const reviewCaseReport = async (reportId) => {
       }
     }
 
-    const actionSummary = generateActionSummary(caseList);
+    const actionSummary = await generateActionSummary(caseList);
 
     await Report.findOneAndUpdate({ reportId }, {
       reviewSummary: {

@@ -83,8 +83,8 @@ function ClusterView() {
             priority: c?.priority || 'N/A',
           }));
           return {
-            id: cluster?._id ?? `${cluster?.representative_title || 'cluster'}-${index}`,
-            name: cluster?.representative_title || 'Untitled Cluster',
+            id: cluster?._id ?? `${cluster?.generated_name || 'cluster'}-${index}`,
+            name: cluster?.generated_name || 'Untitled Cluster',
             description: cluster?.cases?.[0]?.subject || 'Issues grouped by semantic similarity',
             count,
             component: product,

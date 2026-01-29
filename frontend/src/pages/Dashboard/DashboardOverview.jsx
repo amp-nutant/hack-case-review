@@ -255,9 +255,9 @@ function DashboardOverview() {
                   color={action.priority === 'high' ? 'red' : 'orange'}
                   count={action.priority.toUpperCase()}
                 />
-                <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{action.title}</TextLabel>
+                <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ lineHeight: '1.2' }}>{action.title}</TextLabel>
               </FlexLayout>
-              <Badge color="gray" count={`${action.affectedCases} cases`} />
+              <Badge color="gray" style={{ width: '75px' }} count={`${action.affectedCases} cases`} />
             </FlexLayout>
           ))}
         </BigCard>
