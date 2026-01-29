@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -6,13 +6,24 @@ import {
   TextLabel,
   Button,
   Loader,
-  TextInput,
+  Input,
   TextArea,
-  VerticalSeparator,
   DatePicker,
   FlexLayout,
   FlexItem,
   Divider,
+  Alert,
+  FormItemProvider,
+  StackingLayout,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  UploadIcon,
+  ReportIcon,
+  CloseIcon,
+  StatusTickMiniIcon,
+  Link,
+  FilterIcon,
+  ImportIcon,
 } from '@nutanix-ui/prism-reactjs';
 import { message } from 'antd';
 import * as XLSX from 'xlsx';
@@ -20,26 +31,72 @@ import { uploadReport } from '../../redux/slices/reportsSlice';
 import { analysisApi } from '../../services/analysisApi';
 import styles from './UploadData.module.css';
 
+// Create form components with labels using FormItemProvider
+const InputWithLabel = FormItemProvider(Input);
+const TextAreaWithLabel = FormItemProvider(TextArea);
+const DatePickerWithLabel = FormItemProvider(DatePicker);
+
+// Data source options
+const DATA_SOURCES = {
+  FETCH_CASES: 'fetch_cases',
+  UPLOAD_CSV: 'upload_csv',
+};
+
 function UploadData() {
-  const [dragActive, setDragActive] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
+  // Data source selection
+  const [dataSource, setDataSource] = useState(null);
+  
+  // Form state for Fetch Cases
   const [reportName, setReportName] = useState('');
   const [reportDescription, setReportDescription] = useState('');
   const [reportComponent, setReportComponent] = useState('');
   const [dateRangeStart, setDateRangeStart] = useState(null);
   const [dateRangeEnd, setDateRangeEnd] = useState(null);
   const [accountName, setAccountName] = useState('');
+  
+  // File upload state
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [previewHeaders, setPreviewHeaders] = useState([]);
   const [previewRows, setPreviewRows] = useState([]);
   const [isParsing, setIsParsing] = useState(false);
   const [previewError, setPreviewError] = useState('');
+  
+  // Form validation state
+  const [isDirty, setIsDirty] = useState(false);
   const [isProceeding, setIsProceeding] = useState(false);
+  
   const fileInputRef = useRef(null);
   const proceedTimeoutRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { uploading, error } = useSelector(state => state.reports);
+  const { uploading } = useSelector(state => state.reports);
 
+  // Validation checks
+  const isFetchCasesValid = useMemo(() => {
+    return (
+      Boolean(reportName.trim()) &&
+      Boolean(reportComponent.trim()) &&
+      Boolean(dateRangeStart) &&
+      Boolean(dateRangeEnd)
+    );
+  }, [reportName, reportComponent, dateRangeStart, dateRangeEnd]);
+
+  const isUploadCsvValid = useMemo(() => {
+    return Boolean(selectedFile) && Boolean(reportName.trim());
+  }, [selectedFile, reportName]);
+
+  const canProceed = useMemo(() => {
+    if (dataSource === DATA_SOURCES.FETCH_CASES) {
+      return isFetchCasesValid;
+    }
+    if (dataSource === DATA_SOURCES.UPLOAD_CSV) {
+      return isUploadCsvValid;
+    }
+    return false;
+  }, [dataSource, isFetchCasesValid, isUploadCsvValid]);
+
+  // File handling
   const handleDrag = e => {
     e.preventDefault();
     e.stopPropagation();
@@ -65,6 +122,21 @@ function UploadData() {
     }
   };
 
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleRemoveFile = (e) => {
+    e.stopPropagation();
+    setSelectedFile(null);
+    setPreviewHeaders([]);
+    setPreviewRows([]);
+    setPreviewError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleUpload = async () => {
     if (!selectedFile) return;
 
@@ -78,11 +150,8 @@ function UploadData() {
     }
   };
 
-  const handleBrowseClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleCancel = () => {
+    setDataSource(null);
     setReportName('');
     setReportDescription('');
     setReportComponent('');
@@ -94,32 +163,24 @@ function UploadData() {
     setPreviewRows([]);
     setPreviewError('');
     setIsParsing(false);
+    setIsDirty(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const isLeftPanelComplete =
-    Boolean(reportName.trim())
-    && Boolean(reportDescription.trim())
-    && Boolean(reportComponent.trim())
-    && Boolean(dateRangeStart)
-    && Boolean(dateRangeEnd)
-    && Boolean(accountName.trim());
-  const canProceed = isLeftPanelComplete || Boolean(selectedFile);
-  const showPreview = Boolean(selectedFile);
-  const previewRowLimit = 5;
-  const previewSampleRows = previewRows.slice(0, previewRowLimit);
-
   const handleProceed = () => {
+    setIsDirty(true);
     if (!canProceed || isProceeding) return;
+    
     setIsProceeding(true);
     if (proceedTimeoutRef.current) {
       clearTimeout(proceedTimeoutRef.current);
     }
+    
     proceedTimeoutRef.current = setTimeout(async () => {
       try {
-        if (selectedFile) {
+        if (dataSource === DATA_SOURCES.UPLOAD_CSV && selectedFile) {
           await handleUpload();
           return;
         }
@@ -141,7 +202,7 @@ function UploadData() {
       } finally {
         setIsProceeding(false);
       }
-    }, 10000);
+    }, 4000);
   };
 
   const parseCsvRows = text => {
@@ -182,6 +243,7 @@ function UploadData() {
     return rows;
   };
 
+  // Parse file when selected
   useEffect(() => {
     if (!selectedFile) {
       setPreviewHeaders([]);
@@ -252,257 +314,330 @@ function UploadData() {
     }
   }, []);
 
-  return (
-    <Loader loading={isProceeding} tip="Loading..." aria-live="polite" style={{ height: '100%' }}>
-      <div className={styles.uploadPage}>
-        <div className={styles.pageHeader}>
-          <div className={styles.pageHeaderRow}>
-            <Title size="h2" className={styles.pageTitle}>
-              Create New Report
-            </Title>
-            <Button type="primary" onClick={() => navigate('/reports')}>
-              My Reports
-            </Button>
-          </div>
-          <TextLabel type="secondary">
-            Select a data source to begin your case review and analysis.
-          </TextLabel>
-        </div>
+  // Render data source selection card
+  const renderDataSourceCard = (type, title, description, icon) => {
+    const isSelected = dataSource === type;
 
-        <div className={styles.sourceCards}>
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <div className={styles.cardIcon}>📤</div>
-              <div>
-                <Title size="h3">Select Data Source</Title>
-                <TextLabel type="secondary">Choose how you want to create this report.</TextLabel>
+    return (
+      <FlexItem flexGrow="1" flexBasis="0">
+        <div
+          className={`${styles.dataSourceCard} ${isSelected ? styles.dataSourceCardSelected : ''}`}
+          onClick={() => setDataSource(type)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && setDataSource(type)}
+        >
+          <FlexLayout flexDirection="column" itemSpacing="16px">
+            <FlexLayout alignItems="center" itemGap="S" style={{ padding: '10px' }}>
+              <div className={`${styles.dataSourceIcon} ${isSelected ? styles.dataSourceIconSelected : ''}`}>
+                {icon}
               </div>
-            </div>
-
-            <FlexLayout>
-              <FlexItem className={styles.leftPanel}>
-                <Title size="h2">Fetch Cases</Title>
-                <TextLabel type="secondary">
-                  Fill out a form to pull cases directly from Salesforce.
+              <FlexLayout flexDirection="column" itemGap="S">
+                <Title size="h3">{title}</Title>
+                <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>
+                  {description}
                 </TextLabel>
-                <Divider className={styles.sectionDivider} />
-                <FlexLayout
-                  alignItems="stretch"
-                  flexDirection="column"
-                  className={styles.inputStack}
-                >
-                  <FlexItem className={styles.inputGroup}>
-                    <TextLabel className={styles.inputLabel}>Name</TextLabel>
-                    <TextInput
-                      className={styles.textInput}
-                      value={reportName}
-                      onChange={e => setReportName(e.target.value)}
-                      placeholder="Add a report name"
-                    />
-                  </FlexItem>
-                  <FlexItem className={styles.inputGroup}>
-                    <TextLabel className={styles.inputLabel}>Description</TextLabel>
-                    <TextArea
-                      className={styles.textInput}
-                      value={reportDescription}
-                      onChange={e => setReportDescription(e.target.value)}
-                      placeholder="Add a short description"
-                      rows={3}
-                    />
-                  </FlexItem>
-                  <FlexItem className={styles.inputGroup}>
-                    <TextLabel className={styles.inputLabel}>Component</TextLabel>
-                    <TextInput
-                      className={styles.textInput}
-                      value={reportComponent}
-                      onChange={e => setReportComponent(e.target.value)}
-                      placeholder="e.g. Storage, Networking"
-                    />
-                  </FlexItem>
-                  <FlexItem className={styles.inputGroup}>
-                    <TextLabel className={styles.inputLabel}>Date Range</TextLabel>
-                    <FlexLayout
-                      alignItems="stretch"
-                      itemSpacing="15px"
-                      className={styles.inputStack}
-                    >
-                      <DatePicker
-                        oldDatePicker={false}
-                        onChange={date => setDateRangeStart(date)}
-                        value={dateRangeStart}
-                      />
-                      <DatePicker
-                        oldDatePicker={false}
-                        onChange={date => setDateRangeEnd(date)}
-                        value={dateRangeEnd}
-                      />
-                    </FlexLayout>
-                  </FlexItem>
-                  <FlexItem className={styles.inputGroup}>
-                    <TextLabel className={styles.inputLabel}>Account</TextLabel>
-                    <TextInput
-                      className={styles.textInput}
-                      value={accountName}
-                      onChange={e => setAccountName(e.target.value)}
-                      placeholder="Search account name"
-                    />
-                  </FlexItem>
-                </FlexLayout>
-              </FlexItem>
-
-              <VerticalSeparator size="large" />
-
-              <FlexItem className={styles.rightPanel}>
-                <Title size="h2">Upload CSV File</Title>
-                <TextLabel type="secondary" className={styles.panelSubtext}>
-                  Import local data from your computer.
-                </TextLabel>
-                <Divider className={styles.sectionDivider} />
-                <div
-                  className={`${styles.dropZone} ${dragActive ? styles.active : ''} ${selectedFile ? styles.hasFile : ''}`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  onClick={handleBrowseClick}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,.xlsx,.xls,.json"
-                    onChange={handleFileSelect}
-                    className={styles.fileInput}
-                  />
-
-                  {selectedFile ? (
-                    <div className={styles.dropContent}>
-                      <span className={styles.fileIcon}>📄</span>
-                      <TextLabel className={styles.fileName}>{selectedFile.name}</TextLabel>
-                      <TextLabel type="secondary">
-                        {(selectedFile.size / 1024).toFixed(2)} KB
-                      </TextLabel>
-                    </div>
-                  ) : (
-                    <div className={styles.dropContent}>
-                      <span className={styles.uploadIcon}>☁️</span>
-                      <TextLabel>Drag and drop file here</TextLabel>
-                      <TextLabel type="secondary">
-                        or <span className={styles.browseLink}>Browse files</span>
-                      </TextLabel>
-                      <TextLabel type="secondary" className={styles.supportedFormats}>
-                        MAXIMUM SIZE: 50MB
-                      </TextLabel>
-                    </div>
-                  )}
-                </div>
-
-                {/* <div className={styles.alternateNote}>
-                <span className={styles.infoIcon}>i</span>
-                <TextLabel type="secondary">
-                  You can also connect using a Salesforce Report ID from your instance.
-                </TextLabel>
-              </div> */}
-              </FlexItem>
+              </FlexLayout>
             </FlexLayout>
-          </div>
+          </FlexLayout>
         </div>
+      </FlexItem>
+    );
+  };
 
-        {/* {showPreview && (
-        <div className={styles.previewCard}>
-          <div className={styles.previewHeader}>
-            <div>
-              <Title size="h4">Preview of Case Numbers</Title>
-              <TextLabel type="secondary">
-                Showing a sample so you can confirm the report uploaded correctly.
+  // Render Fetch Cases form
+  const renderFetchCasesForm = () => (
+    <StackingLayout itemGap="S">
+      <FlexLayout flexDirection="column" itemGap="S">
+        <InputWithLabel
+          label={<span>Report Name <span className={styles.required}>*</span></span>}
+          value={reportName}
+          onChange={e => setReportName(e.target.value)}
+          placeholder="e.g., Q4 2025 Case Analysis"
+          error={isDirty && !reportName.trim()}
+          helpText={isDirty && !reportName.trim() ? 'Report name is required' : undefined}
+        />
+        <TextAreaWithLabel
+          label="Description (Optional)"
+          value={reportDescription}
+          onChange={e => setReportDescription(e.target.value)}
+          placeholder="Add a brief description of this report..."
+          rows={3}
+        />
+
+        <Divider />
+
+              <FlexLayout alignItems="center" itemGap="S">
+        <FilterIcon />
+        <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ fontWeight: 600 }}>
+          Select Filters
+        </TextLabel>
+      </FlexLayout>
+
+        <InputWithLabel
+          label="Component"
+          value={reportComponent}
+          onChange={e => setReportComponent(e.target.value)}
+          placeholder="e.g., Storage, Networking, Prism Central"
+          error={isDirty && !reportComponent.trim()}
+          helpText={isDirty && !reportComponent.trim() ? 'Component is required' : undefined}
+        />
+
+        <FlexLayout itemGap="S">
+          <DatePickerWithLabel
+            label="Start Date"
+            oldDatePicker={false}
+            onChange={date => setDateRangeStart(date)}
+            value={dateRangeStart}
+            error={isDirty && !dateRangeStart}
+            helpText={isDirty && !dateRangeStart ? 'Start date is required' : undefined}
+          />
+          <DatePickerWithLabel
+            label="End Date"
+            oldDatePicker={false}
+            onChange={date => setDateRangeEnd(date)}
+            value={dateRangeEnd}
+            error={isDirty && !dateRangeEnd}
+            helpText={isDirty && !dateRangeEnd ? 'End date is required' : undefined}
+          />
+        </FlexLayout>
+
+        <InputWithLabel
+          label="Account (Optional)"
+          value={accountName}
+          onChange={e => setAccountName(e.target.value)}
+          placeholder="Search account name..."
+        />
+      </FlexLayout>
+    </StackingLayout>
+  );
+
+  // Render Upload CSV form
+  const renderUploadCsvForm = () => (
+    <StackingLayout itemGap="S">
+      <FlexLayout flexDirection="column" itemGap="S">
+        <InputWithLabel
+          label={<span>Report Name <span className={styles.required}>*</span></span>}
+          value={reportName}
+          onChange={e => setReportName(e.target.value)}
+          placeholder="e.g., Q4 2025 Case Analysis"
+          error={isDirty && !reportName.trim()}
+          helpText={isDirty && !reportName.trim() ? 'Report name is required' : undefined}
+        />
+      </FlexLayout>
+
+      <FlexLayout>
+        <FlexItem flexGrow="1">
+          <TextAreaWithLabel
+            label="Description (Optional)"
+            value={reportDescription}
+            onChange={e => setReportDescription(e.target.value)}
+            placeholder="Add a brief description of this report..."
+            rows={3}
+          />
+        </FlexItem>
+      </FlexLayout>
+
+      <Divider />
+
+      <FlexLayout alignItems="center" itemGap="S">
+        <UploadIcon />
+        <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ fontWeight: 600 }}>
+          Upload File
+        </TextLabel>
+      </FlexLayout>
+
+      <div
+        className={`${styles.dropZone} ${dragActive ? styles.dropZoneActive : ''} ${selectedFile ? styles.dropZoneHasFile : ''}`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={!selectedFile ? handleBrowseClick : undefined}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls,.json"
+          onChange={handleFileSelect}
+          className={styles.fileInput}
+        />
+
+        {selectedFile ? (
+          <FlexLayout flexDirection="column" alignItems="center" itemSpacing="16px">
+            <div className={styles.fileIconWrapper}>
+              <ReportIcon />
+            </div>
+            <FlexLayout flexDirection="column" alignItems="center" itemSpacing="4px">
+              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ fontWeight: 600 }}>
+                {selectedFile.name}
               </TextLabel>
-            </div>
-            <TextLabel className={styles.previewMeta}>
-              {previewRows.length
-                ? `Showing ${previewSampleRows.length} of ${previewRows.length} rows`
-                : 'No preview rows found'}
-            </TextLabel>
-          </div>
-          {isParsing && (
-            <div className={styles.previewState}>
-              <Loader size="small" />
-              <TextLabel type="secondary">Reading file...</TextLabel>
-            </div>
-          )}
-          {!isParsing && previewError && (
-            <TextLabel className={styles.previewError}>{previewError}</TextLabel>
-          )}
-          {!isParsing && !previewError && (
-            <div className={styles.previewTable}>
-              <div className={styles.previewTableHeader}>
-                {previewHeaders.map(header => (
-                  <div key={header} className={styles.previewCell}>
-                    {header || 'Field'}
-                  </div>
-                ))}
-              </div>
-              <div className={styles.previewTableBody}>
-                {previewSampleRows.map((row, rowIndex) => (
-                  <div key={`row-${rowIndex}`} className={styles.previewTableRow}>
-                    {previewHeaders.map((header, colIndex) => (
-                      <div key={`${header}-${rowIndex}-${colIndex}`} className={styles.previewCell}>
-                        {String(row[colIndex] ?? '')}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )} */}
-
-        <div className={styles.bottomBar}>
-          <div className={styles.helpText}>
-            <span className={styles.infoIcon}>?</span>
-            <TextLabel type="secondary">
-              Need help choosing? <span className={styles.link}>View documentation.</span>
-            </TextLabel>
-          </div>
-
-          <div className={styles.actions}>
-            <Button type="secondary" onClick={handleCancel}>
-              Cancel
-            </Button>
+              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>
+                {(selectedFile.size / 1024).toFixed(2)} KB
+              </TextLabel>
+            </FlexLayout>
             <Button
-              type="primary"
-              onClick={handleProceed}
-              disabled={!canProceed || uploading || isProceeding}
+              type={Button.ButtonTypes.SECONDARY}
+              onClick={handleRemoveFile}
             >
-              {uploading || isProceeding ? (
-                <span className={styles.loaderInline}>
-                  <Loader size="small" />
-                  <span>Processing...</span>
-                </span>
-              ) : (
-                'Proceed to Analysis'
-              )}
+              <CloseIcon /> Remove File
             </Button>
-          </div>
-        </div>
-
-        {/* <div className={styles.recentSection}>
-        <Title size="h4">Recently Connected Sources</Title>
-        <div className={styles.recentGrid}>
-          {[
-            { name: 'Q4_Support_Cases.csv', meta: 'Uploaded 2h ago', type: 'csv' },
-            { name: 'Critical High-Priority (SF)', meta: 'Fetched Yesterday', type: 'sf' },
-            { name: 'Customer_Feedback_2023.csv', meta: 'Uploaded 3d ago', type: 'csv' },
-          ].map(source => (
-            <div key={source.name} className={styles.recentCard}>
-              <div className={styles.recentIcon}>{source.type === 'sf' ? '🗄️' : '📄'}</div>
-              <div>
-                <TextLabel className={styles.recentName}>{source.name}</TextLabel>
-                <TextLabel type="secondary">{source.meta}</TextLabel>
-              </div>
+          </FlexLayout>
+        ) : (
+          <FlexLayout flexDirection="column" alignItems="center" itemGap="XS">
+            <div className={styles.uploadIconWrapper}>
+              <UploadIcon />
             </div>
-          ))}
-        </div>
-      </div> */}
+            <FlexLayout flexDirection="column" alignItems="center" itemGap='XS'>
+              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>
+                Drag and drop file here
+              </TextLabel>
+              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>
+                or
+              </TextLabel>
+              <Button type={Button.ButtonTypes.PRIMARY}>
+                Browse Files
+              </Button>
+            </FlexLayout>
+            <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ fontSize: '12px' }}>
+              CSV files only • Maximum size: 50MB
+            </TextLabel>
+          </FlexLayout>
+        )}
+      </div>
+
+      {isDirty && !selectedFile && (
+        <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ color: '#ef4444' }}>
+          Please upload a file to continue
+        </TextLabel>
+      )}
+
+      {isParsing && (
+        <FlexLayout alignItems="center" itemSpacing="10px">
+          <Loader size="small" />
+          <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>Parsing file...</TextLabel>
+        </FlexLayout>
+      )}
+
+      {previewError && (
+        <Alert type={Alert.AlertTypes.ERROR} message={previewError} />
+      )}
+    </StackingLayout>
+  );
+
+  return (
+    <Loader loading={isProceeding} tip="Generating report..." aria-live="polite" style={{ height: '100%' }}>
+      <div className={styles.page}>
+        <FlexLayout flexDirection="column" style={{ padding: '18px' }}>
+          {/* Page Header */}
+          <FlexLayout justifyContent="space-between" alignItems="center">
+            <FlexLayout flexDirection="column" itemGap="S">
+              <Title size="h2">Create New Report</Title>
+              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>
+                Select a data source to begin your case review and analysis
+              </TextLabel>
+            </FlexLayout>
+            <Button type={Button.ButtonTypes.PRIMARY} onClick={() => navigate('/reports')}>
+              <ReportIcon /> My Reports
+            </Button>
+          </FlexLayout>
+
+          <FlexLayout justifyContent="center" style={{ width: '100%' }}>
+          <FlexLayout flexDirection="column" style={{ width: '60%' }} itemGap="L">
+            {/* Main Content Card */}
+            <FlexLayout flexDirection="column" itemGap="L">
+              {/* Step 1: Select Data Source */}
+              <FlexLayout flexDirection="column" itemGap="M">
+                <FlexLayout alignItems="center" itemGap="S">
+                  <div className={styles.stepNumber}>1</div>
+                  <Title size="h3">Select Data Source</Title>
+                </FlexLayout>
+
+                <FlexLayout itemGap="S">
+                  {renderDataSourceCard(
+                    DATA_SOURCES.FETCH_CASES,
+                    'Fetch Cases from SFDC',
+                    'Use filters to pull case data directly from the salesforce',
+                    <ImportIcon />
+                  )}
+                  {renderDataSourceCard(
+                    DATA_SOURCES.UPLOAD_CSV,
+                    'Upload CSV File',
+                    'Import local data from your computer (Max 50MB)',
+                    <UploadIcon />
+                  )}
+                </FlexLayout>
+              </FlexLayout>
+
+              {/* Step 2: Configure Report - Only show when data source is selected */}
+              {dataSource ? (
+                <FlexLayout flexDirection="column" itemGap="L">
+                  <FlexLayout alignItems="center" itemGap="S">
+                    <div className={styles.stepNumber}>2</div>
+                    <Title size="h3">Configure Report</Title>
+                  </FlexLayout>
+
+                  <FlexLayout flexDirection="column">
+                    {dataSource === DATA_SOURCES.FETCH_CASES && renderFetchCasesForm()}
+                    {dataSource === DATA_SOURCES.UPLOAD_CSV && renderUploadCsvForm()}
+                  </FlexLayout>
+                </FlexLayout>
+              ) : (
+                <FlexLayout
+                  justifyContent="center"
+                  alignItems="center"
+                  padding="40px"
+                  style={{ borderTop: '1px solid #e5e7eb', marginTop: '8px' }}
+                >
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>
+                    Select a data source above to continue
+                  </TextLabel>
+                </FlexLayout>
+              )}
+            </FlexLayout>
+
+            {/* Help Banner */}
+            <Alert
+              type={Alert.AlertTypes.INFO}
+              message={
+                <span>
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ fontWeight: 600 }}>
+                    Need help choosing?
+                  </TextLabel>{' '}
+                  <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>
+                    Use Fetch Cases for real-time data from the system, or Upload CSV for custom datasets and external analysis.
+                  </TextLabel>{' '}
+                  <Link href="#" onClick={e => e.preventDefault()}>
+                    View documentation
+                  </Link>
+                </span>
+              }
+            />
+
+            {/* Bottom Actions Bar */}
+            <FlexLayout
+              justifyContent="flex-end"
+              alignItems="center"
+              itemGap='S'
+              
+            >
+{dataSource && (
+                <Button type={Button.ButtonTypes.SECONDARY} onClick={handleCancel}>
+                  Cancel
+                </Button>
+              )}
+              <Button
+                type={Button.ButtonTypes.PRIMARY}
+                onClick={handleProceed}
+                disabled={!canProceed || uploading || isProceeding}
+                loading={uploading || isProceeding}
+              >
+                Start Analysis <ChevronRightIcon />
+              </Button>
+            </FlexLayout>
+          </FlexLayout>
+          </FlexLayout>
+        </FlexLayout>
       </div>
     </Loader>
   );
