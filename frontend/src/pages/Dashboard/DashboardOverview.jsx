@@ -24,6 +24,8 @@ function DashboardOverview() {
     totalCases: mockDashboardData.totalCases,
     bucketTotal: mockDashboardData.buckets.total,
     topIssues: mockDashboardData.buckets.topIssues,
+    actionsTotal: mockDashboardData.actions.total,
+    actionsItems: mockDashboardData.actions.items,
     kbJiraIssuesTotal: mockDashboardData.kbJiraIssues.total,
     kbMissingTotal: mockDashboardData.kbJiraIssues.kbMissing,
     jiraOpenTotal: mockDashboardData.kbJiraIssues.jiraOpen,
@@ -51,6 +53,8 @@ function DashboardOverview() {
         const totalCases = response?.data?.totalCases;
         const bucketTotal = response?.data?.buckets?.total;
         const topIssues = response?.data?.buckets?.topIssues;
+        const actionsTotal = response?.data?.actions?.total;
+        const actionsItems = response?.data?.actions?.items;
         const kbJiraIssuesTotal = response?.data?.kbJiraIssues?.total;
         const kbMissingTotal = response?.data?.kbJiraIssues?.kbMissing;
         const jiraOpenTotal = response?.data?.kbJiraIssues?.jiraOpen;
@@ -65,6 +69,10 @@ function DashboardOverview() {
           kbJiraIssuesTotal: Number.isFinite(kbJiraIssuesTotal)
             ? kbJiraIssuesTotal
             : prev.kbJiraIssuesTotal,
+          actionsTotal: Number.isFinite(actionsTotal) ? actionsTotal : prev.actionsTotal,
+          actionsItems: Array.isArray(actionsItems) && actionsItems.length > 0
+            ? actionsItems
+            : prev.actionsItems,
           kbMissingTotal: Number.isFinite(kbMissingTotal) ? kbMissingTotal : prev.kbMissingTotal,
           jiraOpenTotal: Number.isFinite(jiraOpenTotal) ? jiraOpenTotal : prev.jiraOpenTotal,
           topKBGaps: Array.isArray(topKBGaps) && topKBGaps.length > 0 ? topKBGaps : prev.topKBGaps,
@@ -118,6 +126,11 @@ function DashboardOverview() {
         ...mockDashboardData.buckets,
         total: overviewStats.bucketTotal,
         topIssues,
+      },
+      actions: {
+        ...mockDashboardData.actions,
+        total: overviewStats.actionsTotal,
+        items: overviewStats.actionsItems,
       },
       kbJiraIssues: {
         ...mockDashboardData.kbJiraIssues,
@@ -207,7 +220,7 @@ function DashboardOverview() {
                   width: '20px', 
                   height: '20px', 
                   borderRadius: '50%', 
-                  backgroundColor: bucket.fill,
+                  backgroundColor: '#9aa5b5',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -239,7 +252,7 @@ function DashboardOverview() {
             >
               <FlexLayout alignItems="center" itemGap="M">
                 <Badge
-                  color={action.priority === 'critical' ? 'red' : 'orange'}
+                  color={action.priority === 'high' ? 'red' : 'orange'}
                   count={action.priority.toUpperCase()}
                 />
                 <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>{action.title}</TextLabel>
