@@ -1,4 +1,4 @@
-import { CaseDetails } from '../models/index.js';
+import { CaseDetails, Report } from '../models/index.js';
 
 /**
  * Get overview stats for a report (or all cases)
@@ -148,6 +148,18 @@ export const getOverview = async (req, res, next) => {
       }));
 
     const totalCases = cases.length;
+    const actionsReportId = '123';
+    const report = await Report.findOne({ reportId: actionsReportId }).lean();
+    const topPriorityActions = report?.reviewSummary?.actionSummary?.topPriorityActions || [];
+    const actionsItems = Array.isArray(topPriorityActions)
+      ? topPriorityActions.map((actionItem, index) => ({
+          id: index + 1,
+          title: actionItem.action,
+          priority: actionItem.priority,
+          category: actionItem.category,
+          affectedCases: actionItem.cases ?? 0,
+        }))
+      : [];
     const topKBGaps = Array.from(kbJiraCounts.values())
       .map((entry) => ({
         id: entry.id,
@@ -178,6 +190,10 @@ export const getOverview = async (req, res, next) => {
       buckets: {
         total: bucketSet.size,
         topIssues,
+      },
+      actions: {
+        total: actionsItems.length,
+        items: actionsItems,
       },
       kbJiraIssues: {
         total: kbJiraIssuesTotal,
