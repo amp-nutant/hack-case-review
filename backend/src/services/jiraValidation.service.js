@@ -187,4 +187,5 @@ async function validateJIRARelevance(jiraIssues, caseData, options = {}) {
 
 export {
   validateJIRARelevance,
+  transformJiraDetails,
 };

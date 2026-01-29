@@ -1,4 +1,6 @@
-import validTags from '../data/tags.json' with { type: 'json' };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const validTags = require('../data/tags.json');
 
 // Pre-defined valid closure tags - suggestions MUST come from this list
 export const VALID_CLOSURE_TAGS = validTags.closeTags;
@@ -22,10 +24,23 @@ Your task is to validate whether the closure tags assigned to a support case acc
 3. **Consistency**: Tags should align with the problem description, conversation, and resolution notes
 4. **Evidence-Based**: Every tag assessment must be backed by specific evidence from the case
 
-## Tag Quality Standards
-- A **correct** tag has clear supporting evidence in the case (problem, conversation, or resolution)
-- An **incorrect** tag contradicts the case content or describes something not present
-- A **partially correct** tag is relevant but too broad, too narrow, or slightly misaligned
+## Accuracy Level Definitions
+
+| Level | isAccurate | When to Use | Action |
+|-------|------------|-------------|--------|
+| **accurate** | true | Tag precisely matches the case content | None needed |
+| **partially_accurate** | true | Tag is in the correct category but too broad/generic when a more specific tag exists | Suggest improvement (not replacement) |
+| **inaccurate** | false | Tag contradicts or doesn't apply to the case | Require replacement |
+
+### Examples:
+- "Prism Central - Others" when case is about PC Scale Up → **partially_accurate** (correct product, but "Prism Central - Scale Up" is more specific)
+- "Prism Central - Scale Up" for a PC scaling case → **accurate** (precise match)
+- "AHV - Networking" for a Prism Central issue → **inaccurate** (wrong product entirely)
+
+### Specificity Issues (for partially_accurate tags):
+- **too_broad**: Generic tag used when a more specific tag exists (e.g., "Others", "Questions", "Other")
+- **too_narrow**: Overly specific tag when a broader one applies better
+- **related_but_different**: Similar category but different sub-component
 
 ## CRITICAL RULE
 - All suggested tags (replacements or missing tags) MUST come from the pre-defined list provided
@@ -132,12 +147,12 @@ When validating closure tags, consider:
   "closureTagsValidation": [
     {
       "tag": "<closure tag name>",
-      "isAccurate": <true|false>,
+      "isAccurate": <true for accurate/partially_accurate, false for inaccurate>,
       "accuracyLevel": "<accurate|partially_accurate|inaccurate>",
       "confidence": "<high|medium|low>",
       "reasoning": "<2-3 sentence explanation of why this tag is/isn't accurate>",
       "supportingEvidence": "<direct quote from case that supports this assessment>",
-      "suggestedReplacement": "<better tag if inaccurate, otherwise null>"
+      "suggestedReplacement": "<replacement tag if inaccurate, otherwise null>"
     }
   ],
   "missingTags": [
@@ -151,10 +166,7 @@ When validating closure tags, consider:
   "overallAssessment": {
     "accuracyScore": <0-100>,
     "tagQuality": "<good|acceptable|poor>",
-    "accurateTags": <count of accurate tags>,
-    "inaccurateTags": <count of inaccurate tags>,
-    "summary": "<2-3 sentence overall assessment of closure tag quality>",
-    "recommendations": ["<recommendation 1>", "<recommendation 2>"]
+    "summary": "<2-3 sentence overall assessment of closure tag quality>"
   }
 }`;
 };
@@ -210,24 +222,30 @@ ${resolutionNotes || 'Not provided'}
 Validate each closure tag for accuracy against the case content.
 **CRITICAL**: All suggestedReplacement and suggestedTag values MUST be exact matches from the Valid Closure Tags list. Do NOT create new tags.
 
+## Accuracy Levels
+- **accurate** (isAccurate: true): Tag precisely matches case content
+- **partially_accurate** (isAccurate: true): Correct category but too broad (suggest improvement, not replacement)
+- **inaccurate** (isAccurate: false): Wrong tag, needs replacement
+
 ## Required JSON Response
 
 {
   "closureTagsValidation": [
     {
       "tag": "<tag name>",
-      "isAccurate": <boolean>,
+      "isAccurate": <true for accurate/partially_accurate, false for inaccurate>,
       "accuracyLevel": "<accurate|partially_accurate|inaccurate>",
       "confidence": "<high|medium|low>",
       "reasoning": "<explanation>",
       "supportingEvidence": "<quote from case>",
-      "suggestedReplacement": "<better tag or null>"
+      "suggestedReplacement": "<replacement if inaccurate, otherwise null>"
     }
   ],
   "missingTags": [
     {
       "suggestedTag": "<missing tag>",
       "reason": "<why needed>",
+      "confidence": "<high|medium|low>",
       "evidence": "<supporting quote>"
     }
   ],

@@ -53,7 +53,7 @@ Rate the KB article's relevance based on:
 
 Respond in JSON format only:
 {
-  "kbId": "${kb.id || kb.articleNumber || 'N/A'}",
+  "kbId": "${kb.articleNumber || kb.id || 'N/A'}",
   "kbTitle": "${kb.title?.substring(0, 100) || ''}",
   "relevanceScore": <number 0-100>,
   "isRelevant": <boolean>,
@@ -70,8 +70,8 @@ Respond in JSON format only:
  */
 function buildBatchKBRelevanceUserPrompt(kbList, caseContext) {
   const kbSection = kbList.map((kb, index) => `
-### KB ${index + 1}
-**KB ID:** ${kb.id || kb.articleNumber || `KB-${index + 1}`}
+### KB ${kb.articleNumber}
+**KB ID:** ${kb.articleNumber || kb.id || `KB-${index + 1}`}
 **Title:** ${kb.title}
 **Summary:** ${kb.summary || 'Not provided'}
 **Solution:** ${kb.solution?.substring(0, 1000) || 'Not provided'}
@@ -117,7 +117,7 @@ Return a JSON object. Include ALL evaluated KBs with their scores.
   "evaluatedCount": ${kbList.length},
   "kbScoresAndRecommendations": [
     {
-      "kbId": "<kb_id>",
+      "kbId": "<kb_article_number>",
       "kbTitle": "<kb_title>",
       "relevanceScore": <0-100>,
       "isRelevant": <boolean>,

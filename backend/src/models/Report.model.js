@@ -48,6 +48,9 @@ const reportSchema = new mongoose.Schema(
     errorMessage: {
       type: String,
     },
+    reviewSummary: {
+      type: Object,
+    },
     metadata: {
       type: Map,
       of: mongoose.Schema.Types.Mixed,

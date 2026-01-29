@@ -3,8 +3,9 @@ import Report from "../models/Report.model.js";
 
 import { bucketiseCase } from "./caseBucketisation.service.js";
 import { validateKBRelevance } from "./kbValidation.service.js";
-import { validateJIRARelevance } from "./jiraValidation.service.js";
-import { validateClosureTagsSimplified } from "./caseClosureValidation.service.js";
+import { transformJiraDetails, validateJIRARelevance } from "./jiraValidation.service.js";
+import { validateClosureTagsSimplified } from "./caseClosureTagValidation.service.js";
+import { generateActionSummary } from "./actionSummary.service.js";
 import { query } from "../config/postgres.js";
 import { cleanHtmlForLLM } from "../utils/dataFormatter.js";
 import { getJIRADetails } from "../api.js";
@@ -18,7 +19,7 @@ import { getJIRADetails } from "../api.js";
 const getCasesAssociatedWithReport = async (reportId) => {
   const caseDetails = await CaseDetails.find({ reportId }).lean();
 
-  return caseDetails.slice(1, 11);
+  return caseDetails;
 };
 
 // const BUCKET_CLASSIFICATION_MAPPING = {
@@ -36,8 +37,73 @@ const getCasesAssociatedWithReport = async (reportId) => {
 //   'RCA not done': 'RCA not done/RCA inconclusive',
 // };
 
-const generateActionSummary = (caseList) => {
+const generateIdentifiers = (caseDetails) => {
+  const identifiers = [];
 
+  if (caseDetails.jira?.present) {
+    identifiers.push('has_jira');
+  }
+
+  if (caseDetails.kb?.present) {
+    identifiers.push('has_kb');
+  }
+
+  if (caseDetails.jira?.missing) {
+    identifiers.push('jira_missing');
+  }
+
+  if (caseDetails.kb?.missing) {
+    identifiers.push('kb_missing');
+  }
+
+  if (caseDetails.kb && !caseDetails.kb.valid) {
+    identifiers.push('kb_not_valid');
+  }
+
+  if (!caseDetails.isClosedTagValid) {
+    identifiers.push('wrong_closed_tag');
+  }
+
+  if (caseDetails.jira && !caseDetails.jira.valid) {
+    identifiers.push('jira_not_valid');
+  }
+
+  return identifiers;
+};
+
+const getBucketCount = (caseList) => {
+  const caseCountPerBucket = caseList.reduce((acc, curr) => {
+    if (acc[curr.bucket]) {
+      acc[curr.bucket] += 1;
+    } else {
+      acc[curr.bucket] = 1;
+    }
+    return acc;
+  }, {});
+
+  return Object.entries(caseCountPerBucket).map(([bucket, count]) => ({
+    name: bucket,
+    count,
+  }));
+};
+
+const getClosedTagCount = (caseList) => {
+  const caseCountPerClosedTag = caseList.reduce((acc, curr) => {
+    const closedTags = curr.tags?.closeTags || [];
+    closedTags.forEach((closedTag) => {
+      if (acc[closedTag]) {
+        acc[closedTag] += 1;
+      } else {
+        acc[closedTag] = 1;
+      }
+    });
+    return acc;
+  }, {});
+
+  return Object.entries(caseCountPerClosedTag).map(([closedTag, count]) => ({
+    name: closedTag,
+    count,
+  }));
 };
 
 export const getKBArticles = async (articleNumbers) => {
@@ -49,11 +115,12 @@ export const getKBArticles = async (articleNumbers) => {
 
   try {
     const result = await query(
-      `SELECT title, summary, solution__c, description__c FROM sfdc.knowledge_base__kav WHERE articleNumber = ANY($1)`,
+      `SELECT articleNumber, title, summary, solution__c, description__c FROM sfdc.knowledge_base__kav WHERE articleNumber = ANY($1)`,
       [articleNumbersArray],
     );
 
-    return result.rows.map(({ title, summary, solution__c, description__c }) => ({
+    return result.rows.map(({ articleNumber, title, summary, solution__c, description__c }) => ({
+      articleNumber,
       title,
       summary,
       solution: cleanHtmlForLLM(solution__c),
@@ -87,7 +154,7 @@ const reviewCaseReport = async (reportId) => {
 
       try {
         // Validate the closure tag
-        const { isValid: isCaseClosureTagValid, missingTags: recommendedTags } = await validateClosureTagsSimplified(caseDetails);
+        const { isValid: isCaseClosureTagValid, ...tagValidationSummary } = await validateClosureTagsSimplified(caseDetails);
 
         if (isCaseClosureTagValid) {
           const basicInfo = caseDetails.caseInfo;
@@ -103,35 +170,106 @@ const reviewCaseReport = async (reportId) => {
             validateJIRARelevance(jiraDetails, caseDetails),
           ]);
 
-          await CaseDetails.findByIdAndUpdate(caseDetails._id, {
-            bucket: caseBucketisationResponse.category,
-            isJIRAValid: jiraValidationResponse.isValid,
-            isKBValid: kbValidationResponse.isValid,
-            isClosedTagValid: true,
-            recommendedTags,
-          });
+          console.log(`Case number ${caseDetails.caseNumber}:`);
+          console.log(`Bucketisation: ${caseBucketisationResponse.category}`);
+          console.log(`JIRA validation: ${jiraValidationResponse.isValid} - Reason: ${jiraValidationResponse.reason}`);
+          console.log(`KB validation: ${kbValidationResponse.isValid} - Reason: ${kbValidationResponse.reason}`);
+          console.log(`Tag validation: ${isCaseClosureTagValid}`);
+          console.log(`Progress ${index + 1} of ${caseList.length}`);
+          console.log(`--------------------------------`);
+
+          let isJIRAMissing = false;
+          if (['Bug', 'Improvement'].includes(caseBucketisationResponse.category)) {
+            if (!jiraDetails) {
+              isJIRAMissing = true;
+            }
+          }
+
+          let isKBMissing = false;
+          if (['Customer Assistance', 'Customer Questions', 'Bug'].includes(caseBucketisationResponse.category)) {
+            if (caseBucketisationResponse.category === 'Bug') {
+              if (basicInfo.jiraCase) {
+                // If JIRA is already present, then we can have a KB article indicating that it is a known bug
+                isKBMissing = true;
+              }
+            } else if (!kbDetails) {
+              isKBMissing = true;
+            }
+          }
+
+          const transformedJIRAList = transformJiraDetails(jiraDetails);
+
+          const jiraAdditionalDetails = {
+            ticket: basicInfo.jiraCase,
+            jiraDetails: transformedJIRAList.map((jira) => {
+              return {
+                key: jira.key,
+                summary: jira.summary,
+                issueType: jira.issueType,
+                status: jira.status,
+                labels: jira.labels,
+                components: jira.components,
+                affectedVersions: jira.affectedVersions,
+                fixVersions: jira.fixVersions,
+              };
+            }),
+            valid: jiraValidationResponse.isValid,
+            present: !!basicInfo.jiraCase,
+            missing: isJIRAMissing,
+            reason: jiraValidationResponse.reason,
+          };
+
+          const kbAdditionalDetails = {
+            article: basicInfo.kbArticle,
+            kbDetails: kbDetails.map((kb) => {
+              return {
+                articleNumber: kb.articleNumber,
+                title: kb.title,
+                summary: kb.summary,
+              };
+            }),
+            valid: kbValidationResponse.isValid,
+            present: !!basicInfo.kbArticle,
+            missing: isKBMissing,
+            reason: kbValidationResponse.reason,
+          };
 
           caseList[index].bucket = caseBucketisationResponse.category;
-          caseList[index].isJIRAValid = jiraValidationResponse.isValid;
-          caseList[index].isKBValid = kbValidationResponse.isValid;
           caseList[index].isClosedTagValid = true;
-          caseList[index].recommendedTags = recommendedTags;
-
+          caseList[index].jira = jiraAdditionalDetails;
+          caseList[index].kb = kbAdditionalDetails;
+          caseList[index].identifiers = generateIdentifiers(caseList[index]);
           successfulCaseReviewCount += 1;
-        } else {
+
           await CaseDetails.findByIdAndUpdate(caseDetails._id, {
-            bucket: 'Wrong Closure Tag',
-            isClosedTagValid: false,
-            recommendedTags,
+            bucket: caseBucketisationResponse.category,
+            isClosedTagValid: true,
+            jira: jiraAdditionalDetails,
+            kb: kbAdditionalDetails,
+            tagValidationSummary,
           });
+        } else {
+          console.log(`Case number ${caseDetails.caseNumber}:`);
+          console.log(`Tag validation: ${isCaseClosureTagValid}`, tagValidationSummary);
+          console.log(`Progress ${index + 1} of ${caseList.length}`);
+          console.log(`--------------------------------`);
 
           caseList[index].bucket = 'Wrong Closure Tag';
           caseList[index].isClosedTagValid = false;
-          caseList[index].recommendedTags = recommendedTags;
+          caseList[index].identifiers = generateIdentifiers(caseList[index]);
+
+          await CaseDetails.findByIdAndUpdate(caseDetails._id, {
+            bucket: 'Wrong Closure Tag',
+            isClosedTagValid: false,
+            tagValidationSummary,
+          });
 
           skippedCaseReviewCount += 1;
         }
       } catch (err) {
+        await CaseDetails.findByIdAndUpdate(caseDetails._id, {
+          error: true,
+        });
         console.error(`Error reviewing case ${caseDetails.caseNumber}:`, err);
         failedCaseReviewCount += 1;
       }
@@ -139,14 +277,18 @@ const reviewCaseReport = async (reportId) => {
 
     const actionSummary = generateActionSummary(caseList);
 
-    await Report.findByIdAndUpdate(reportId, {
-      actionSummary,
-      review_summary: {
+    await Report.findOneAndUpdate({ reportId }, {
+      reviewSummary: {
         success: successfulCaseReviewCount,
         failed: failedCaseReviewCount,
         skipped: skippedCaseReviewCount,
+        buckets: getBucketCount(caseList),
+        closedTags: getClosedTagCount(caseList),
+        actionSummary,
       },
     });
+
+    console.log(`Case review completed for report ${reportId}. Successful: ${successfulCaseReviewCount}, Failed: ${failedCaseReviewCount}, Skipped: ${skippedCaseReviewCount}`);
   } catch (err) {
     console.error('Error reviewing case report:', err);
     throw err;

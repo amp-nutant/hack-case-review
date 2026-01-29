@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const { LLM_API_URL, LLM_API_KEY, LLM_API_TOKEN, LLM_API_MODEL } = process.env;
+const { LLM_API_URL, LLM_API_KEY, LLM_API_TOKEN } = process.env;
 
 // Use TOKEN if KEY is not set (for custom endpoints with Bearer token)
 const getAuthHeader = () => {
@@ -10,7 +10,7 @@ const getAuthHeader = () => {
 
 export const parseLLMJSONResponse = (response) => {
   try {
-    const content = response.content || response.text;
+    const content = response.content || response.text || '{}';
     // Clean up potential markdown code blocks
     const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
     return JSON.parse(jsonStr);
@@ -26,7 +26,8 @@ export const invokeLLMAPI = async ({ systemPrompt, userPrompt, maxTokens = 4096,
   }
 
   const data = {
-    model: LLM_API_MODEL || 'gpt-4',
+    // model: LLM_API_MODEL || 'gpt-4',
+    model: 'hack-reason',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },

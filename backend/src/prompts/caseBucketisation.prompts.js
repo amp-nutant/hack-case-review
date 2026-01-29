@@ -157,6 +157,9 @@ ${caseContext.description || 'No description provided'}
 **Resolution Notes:**
 ${caseContext.resolutionNotes || 'Not provided'}
 
+**Actions Taken:**
+${caseContext.actionsTaken || 'Not provided'}
+
 **Linked Artifacts:**
 - JIRA Linked: ${caseContext.jiraCase ? `Yes (${caseContext.jiraCase || 'key unknown'})` : 'No'}
 - KB Article Linked: ${caseContext.kbArticle ? `Yes (${caseContext.kbArticle || 'id unknown'})` : 'No'}

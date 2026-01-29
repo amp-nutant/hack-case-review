@@ -1,10 +1,18 @@
 import { invokeLLMAPI, parseLLMJSONResponse } from './llm.service.js';
 
 import { buildCaseBucketisationUserPrompt, CASE_BUCKETISATION_SYSTEM_PROMPT } from '../prompts/caseBucketisation.prompts.js';
+import { formatActionsForLLM } from '../utils/dataFormatter.js';
 
 export const buildCaseBucketisationContext = (caseDetails) => {
   const basicCaseInfo = caseDetails.caseInfo;
   const resolutionInfo = caseDetails.resolution;
+
+  // get the Closure Summary from the case conversation
+  let closureSummary = [...caseDetails.conversation].reverse().find(
+    (message) => message.direction === 'outbound' && message.subject?.toLowerCase()?.includes('closure ')
+  );
+  closureSummary = closureSummary?.content;
+  closureSummary = formatActionsForLLM(closureSummary);
 
   return {
     subject: basicCaseInfo.subject,
@@ -13,6 +21,7 @@ export const buildCaseBucketisationContext = (caseDetails) => {
     product: basicCaseInfo.product,
     description: basicCaseInfo.description,
     resolutionNotes: resolutionInfo.resolutionNotes,
+    actionsTaken: closureSummary,
     jiraCase: basicCaseInfo.jiraCase,
     kbArticle: basicCaseInfo.kbArticle,
     caseTags: caseDetails.tags?.closeTags || [],

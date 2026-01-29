@@ -34,17 +34,39 @@ export const extractClosureTagContext = (caseData) => {
   };
 };
 
+/**
+ * Process and validate the LLM response for closure tag validation
+ * 
+ * New logic:
+ * - accurate → valid, no action
+ * - partially_accurate + isAccurate:true → valid, suggest improvement (not wrong)
+ * - partially_accurate + isAccurate:false → invalid, needs review
+ * - inaccurate → invalid, needs replacement
+ * 
+ * @param {Object} result - Parsed LLM response
+ * @returns {Object} Processed validation result
+ */
 function validateClosureTagResponse(result) {
-  if (['good', 'acceptable'].includes(result.overallAssessment.tagQuality)) {
+  const overallAssessment = result.overallAssessment || {};
+  const validations = result.closureTagsValidation || [];
+
+  const partiallyAccurateTags = validations.filter((v) => v.accuracyLevel === 'partially_accurate' && v.confidence === 'high');
+  const inaccurateTags = validations.filter((v) => v.accuracyLevel === 'inaccurate' && v.confidence === 'high');
+
+  if (['acceptable', 'good'].includes(overallAssessment.tagQuality)) {
     return {
       isValid: true,
-      missingTags: result.missingTags?.filter((tag) => tag.confidence === 'high') || [],
+      inaccurateTags,
+      partiallyAccurateTags,
+      missingTags: result.missingTags || [],
     };
-  } else {
-    return {
-      isValid: false,
-      missingTags: result.missingTags?.filter((tag) => ['high', 'medium'].includes(tag.confidence)) || [],
-    };
+  }
+
+  return {
+    isValid: false,
+    inaccurateTags,
+    partiallyAccurateTags,
+    missingTags: result.missingTags || [],
   }
 }
 
@@ -143,9 +165,6 @@ export async function validateClosureTagsSimplified(caseData, options = {}) {
     return validationResult;
   } catch (error) {
     console.error('Error validating closure tags (simplified):', error);
-    
-    return {
-      isValid: false,
-    };
+    throw new Error('Error validating closure tags (simplified):', error);
   }
 }
