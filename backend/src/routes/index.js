@@ -7,6 +7,8 @@ import uploadRoutes from './upload.routes.js';
 import analysisRoutes from './analysis.routes.js';
 import chartsRoutes from './charts.routes.js';
 import clustersRoutes from './clusters.routes.js';
+import overviewRoutes from './overview.routes.js';
+import casesController from '../controllers/cases.controller.js';
 
 const router = Router();
 
@@ -31,6 +33,9 @@ router.use('/analysis', analysisRoutes);
 // Charts routes
 router.use('/charts', chartsRoutes);
 
+// Overview routes
+router.use('/overview', overviewRoutes);
+
 // Clusters routes
 router.use('/issue-groups', clustersRoutes);
 
@@ -47,6 +52,7 @@ router.get('/', (_req, res) => {
       upload: '/api/upload',
       analysis: '/api/analysis',
       charts: '/api/charts',
+      overview: '/api/overview',
       clusters: '/api/issue-groups',
       llm: '/api/llm',
     },

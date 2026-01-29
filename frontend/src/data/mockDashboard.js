@@ -58,7 +58,7 @@ export const mockDashboardData = {
   
   // Closed Tags distribution - How cases are tagged when closed
   closedTags: {
-    total: 18,
+    total: 10,
     // All closed tags with case counts and colors
     items: [
       { id: 1, name: 'Prism Central - PE-PC Connection', value: 28, fill: '#e67e5a' },
@@ -71,14 +71,14 @@ export const mockDashboardData = {
       { id: 8, name: 'Prism Central - PC Management', value: 9, fill: '#06b6d4' },
       { id: 9, name: 'Prism Central - Register/Unregister', value: 8, fill: '#84cc16' },
       { id: 10, name: 'Prism Central - CMSP - IAM', value: 7, fill: '#f43f5e' },
-      { id: 11, name: 'Prism Central - Memory Usage', value: 6, fill: '#a855f7' },
-      { id: 12, name: 'Prism Central - Out of Memory (OOM)', value: 5, fill: '#14b8a6' },
-      { id: 13, name: 'Prism Central - Install/Deploy', value: 4, fill: '#f97316' },
-      { id: 14, name: 'Prism Central - Stuck Task', value: 4, fill: '#6366f1' },
-      { id: 15, name: 'Prism Central - CMSP - Authn / Authz', value: 3, fill: '#22c55e' },
-      { id: 16, name: 'Prism Central - CMSP - Upgrade', value: 3, fill: '#0ea5e9' },
-      { id: 17, name: 'Prism Central - Reporting', value: 2, fill: '#d946ef' },
-      { id: 18, name: 'Prism Central - CPU Usage', value: 2, fill: '#64748b' },
+      // { id: 11, name: 'Prism Central - Memory Usage', value: 6, fill: '#a855f7' },
+      // { id: 12, name: 'Prism Central - Out of Memory (OOM)', value: 5, fill: '#14b8a6' },
+      // { id: 13, name: 'Prism Central - Install/Deploy', value: 4, fill: '#f97316' },
+      // { id: 14, name: 'Prism Central - Stuck Task', value: 4, fill: '#6366f1' },
+      // { id: 15, name: 'Prism Central - CMSP - Authn / Authz', value: 3, fill: '#22c55e' },
+      // { id: 16, name: 'Prism Central - CMSP - Upgrade', value: 3, fill: '#0ea5e9' },
+      // { id: 17, name: 'Prism Central - Reporting', value: 2, fill: '#d946ef' },
+      // { id: 18, name: 'Prism Central - CPU Usage', value: 2, fill: '#64748b' },
     ],
     // Top 5 for overview display (with percentages for progress bars)
     topTags: [
