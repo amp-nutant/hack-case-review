@@ -8,7 +8,6 @@ import {
   StackingLayout,
 } from '@nutanix-ui/prism-reactjs';
 import { fetchReportById } from '../../redux/slices/reportsSlice';
-import { fetchCasesByReport } from '../../redux/slices/casesSlice';
 import { mockReports } from '../../data/mockReports';
 
 function AnalysisDashboard() {
@@ -19,7 +18,6 @@ function AnalysisDashboard() {
   useEffect(() => {
     if (reportId) {
       dispatch(fetchReportById(reportId));
-      dispatch(fetchCasesByReport(reportId));
     }
   }, [reportId, dispatch]);
 

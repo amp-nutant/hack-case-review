@@ -11,9 +11,9 @@
  * - YELLOW: KB wrong/outdated, JIRA looks not related
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   FlexLayout,
   FlexItem,
@@ -30,6 +30,7 @@ import {
   Button,
 } from '@nutanix-ui/prism-reactjs';
 import { mockCases, ValidationStatus } from '../../data/mockCases';
+import { fetchAllCases, fetchCasesByReport } from '../../redux/slices/casesSlice';
 import styles from './CaseList.module.css';
 
 // Quick filter definitions
@@ -77,13 +78,31 @@ const tableStructure = {
     bottom: true,
   },
   columnWidths: {
-    caseNumber: '120px',
-    title: '300px',
-    bucket: '180px',
-    closedTag: '280px',
-    kbArticle: '120px',
-    jiraTicket: '120px',
+    caseNumber: '110px',
+    title: '260px',
+    bucket: '140px',
+    closedTag: '240px',
+    kbArticle: '110px',
+    jiraTicket: '110px',
   },
+};
+
+const KB_LINK_BASE = 'https://portal.nutanix.com/kb/';
+const JIRA_LINK_BASE = 'https://jira.nutanix.com/browse/';
+
+const formatKbDisplay = (kbValue) => {
+  if (!kbValue) return '';
+  const trimmed = `${kbValue}`.replace(/^0+/, '');
+  return `KB-${trimmed || kbValue}`;
+};
+
+const splitValues = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return `${value}`
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
 };
 
 // Helper to build validation message
@@ -111,13 +130,14 @@ const buildValidationMessage = (field, status, suggestedValue, reason) => {
 
 function CaseList() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { reportId } = useOutletContext();
   const { items, loading } = useSelector((state) => state.cases);
 
   // State for pagination, sorting, and search
   const [pagination, setPagination] = useState({
     ...defaultPagination,
-    total: mockCases.length,
+    total: 0,
   });
   const [sort, setSort] = useState(defaultSort);
   const [searchValue, setSearchValue] = useState('');
@@ -127,12 +147,17 @@ function CaseList() {
   const [selectedComponents, setSelectedComponents] = useState([]);
   const [activeQuickFilters, setActiveQuickFilters] = useState([]);
 
-  // Use mock data for demo
-  const cases = items.length > 0 ? items : mockCases;
+  // Always fetch all cases from case-details collection on mount
+  useEffect(() => {
+    dispatch(fetchAllCases());
+  }, [dispatch]);
+
+  // Prefer API data; fall back to mock only when explicitly in demo flow
+  const cases = items.length > 0 ? items : (reportId?.startsWith('demo-') ? mockCases : []);
 
   // Extract unique bucket and component values for dropdowns from base data
   const filterOptions = useMemo(() => {
-    const buckets = [...new Set(cases.map(c => c.bucket))].sort();
+    const buckets = [...new Set(cases.map(c => c.bucket).filter(Boolean))].sort();
     const components = [...new Set(cases.map(c => c.closedTag?.value).filter(Boolean))].sort();
     
     return {
@@ -218,11 +243,11 @@ function CaseList() {
     // Filter by search
     if (searchValue) {
       data = data.filter((item) =>
-        item.caseNumber.toLowerCase().includes(searchValue) ||
-        item.title.toLowerCase().includes(searchValue) ||
-        item.bucket.toLowerCase().includes(searchValue) ||
+        item.caseNumber?.toLowerCase().includes(searchValue) ||
+        item.title?.toLowerCase().includes(searchValue) ||
+        item.bucket?.toLowerCase().includes(searchValue) ||
         item.accountName?.toLowerCase().includes(searchValue) ||
-        item.closedTag.value?.toLowerCase().includes(searchValue)
+        item.closedTag?.value?.toLowerCase().includes(searchValue)
       );
     }
 
@@ -251,7 +276,7 @@ function CaseList() {
             case QUICK_FILTERS.WRONG_TAG:
               return item.closedTag?.status === ValidationStatus.WRONG;
             case QUICK_FILTERS.HAS_ISSUES:
-              return item.issues.length > 0;
+              return (item.issues?.length || 0) > 0;
             default:
               return false;
           }
@@ -425,19 +450,45 @@ function CaseList() {
       title: 'KB',
       key: 'kbArticle',
       render: (kbArticle) => {
-        if (!kbArticle?.value) return <TextLabel type="secondary">-</TextLabel>;
-        return <Link href="#">{kbArticle.value}</Link>;
+        const values = splitValues(kbArticle?.value);
+        if (values.length === 0) return <TextLabel type="secondary">-</TextLabel>;
+        return (
+          <FlexLayout itemGap="XS" flexWrap="wrap">
+            {values.map((v) => (
+              <Link
+                key={v}
+                href={`${KB_LINK_BASE}${v}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={v}
+              >
+                {formatKbDisplay(v)}
+              </Link>
+            ))}
+          </FlexLayout>
+        );
       },
     },
     {
       title: 'JIRA',
       key: 'jiraTicket',
       render: (jiraTicket) => {
-        if (!jiraTicket?.value) return <TextLabel type="secondary">-</TextLabel>;
+        const values = splitValues(jiraTicket?.value);
+        if (values.length === 0) return <TextLabel type="secondary">-</TextLabel>;
         return (
-          <Link href={`https://jira.nutanix.com/browse/${jiraTicket.value}`} target="_blank">
-            {jiraTicket.value}
-          </Link>
+          <FlexLayout itemGap="XS" flexWrap="wrap">
+            {values.map((v) => (
+              <Link
+                key={v}
+                href={`${JIRA_LINK_BASE}${v}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={v}
+              >
+                {v}
+              </Link>
+            ))}
+          </FlexLayout>
         );
       },
     },
@@ -460,7 +511,7 @@ function CaseList() {
 
   // Calculate issue summary from filtered data (for header badge)
   const issueSummary = useMemo(() => {
-    const withIssues = processedData.filter(c => c.issues.length > 0).length;
+    const withIssues = processedData.filter(c => (c.issues?.length || 0) > 0).length;
     const closedTagIssues = processedData.filter(c => c.closedTag?.status === ValidationStatus.WRONG).length;
     const kbIssues = processedData.filter(c => 
       c.kbArticle?.status === ValidationStatus.MISSING || 
@@ -476,7 +527,7 @@ function CaseList() {
 
   // Calculate quick filter counts from unfiltered data (for consistent chip labels)
   const quickFilterCounts = useMemo(() => ({
-    hasIssues: cases.filter(c => c.issues.length > 0).length,
+    hasIssues: cases.filter(c => (c.issues?.length || 0) > 0).length,
     noJira: cases.filter(c => c.jiraTicket?.status === ValidationStatus.MISSING).length,
     noKb: cases.filter(c => c.kbArticle?.status === ValidationStatus.MISSING).length,
     wrongKb: cases.filter(c => c.kbArticle?.status === ValidationStatus.WRONG || c.kbArticle?.status === ValidationStatus.OUTDATED).length,

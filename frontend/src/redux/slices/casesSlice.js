@@ -2,6 +2,18 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { casesApi } from '../../services/casesApi';
 
 // Async thunks
+export const fetchAllCases = createAsyncThunk(
+  'cases/fetchAllCases',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await casesApi.getAll();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 export const fetchCasesByReport = createAsyncThunk(
   'cases/fetchCasesByReport',
   async (reportId, { rejectWithValue }) => {
@@ -19,6 +31,19 @@ export const fetchCaseById = createAsyncThunk(
   async (caseId, { rejectWithValue }) => {
     try {
       const response = await casesApi.getById(caseId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Fetch full case details by case number from case-details collection
+export const fetchCaseDetailsByCaseNumber = createAsyncThunk(
+  'cases/fetchCaseDetailsByCaseNumber',
+  async (caseNumber, { rejectWithValue }) => {
+    try {
+      const response = await casesApi.getDetailsByCaseNumber(caseNumber);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -74,6 +99,19 @@ const casesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      // Fetch all case-details cases
+      .addCase(fetchAllCases.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllCases.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(fetchAllCases.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // Fetch single case
       .addCase(fetchCaseById.pending, (state) => {
         state.loading = true;
@@ -84,6 +122,19 @@ const casesSlice = createSlice({
         state.currentCase = action.payload;
       })
       .addCase(fetchCaseById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch case details by case number
+      .addCase(fetchCaseDetailsByCaseNumber.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCaseDetailsByCaseNumber.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentCase = action.payload;
+      })
+      .addCase(fetchCaseDetailsByCaseNumber.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
