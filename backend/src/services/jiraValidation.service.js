@@ -177,11 +177,18 @@ async function validateJIRARelevance(jiraIssues, caseData, options = {}) {
   // Check relevance
   const result = await checkBatchJIRARelevance(jiraList, caseContext);
 
-  const filteredThresholds = result.jiraValidations?.filter(jira => jira.relevanceScore >= threshold) || [];
+  let jiraScoresAndRecommendations = [];
+  if (Array.isArray(result.jiraValidations)) {
+    jiraScoresAndRecommendations = result.jiraValidations;
+  } else {
+    jiraScoresAndRecommendations = [result];
+  }
+
+  const filteredThresholds = jiraScoresAndRecommendations?.filter(jira => jira.relevanceScore >= threshold) || [];
 
   return {
     isValid: filteredThresholds.length > 0,
-    reason: filteredThresholds.length > 0 ? filteredThresholds[0].reasoning : result.jiraValidations?.[0]?.reasoning,
+    reason: filteredThresholds.length > 0 ? filteredThresholds[0].reasoning : jiraScoresAndRecommendations?.[0]?.reasoning,
   };
 }
 

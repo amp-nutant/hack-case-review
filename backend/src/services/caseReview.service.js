@@ -115,12 +115,12 @@ export const getKBArticles = async (articleNumbers) => {
 
   try {
     const result = await query(
-      `SELECT articleNumber, title, summary, solution__c, description__c FROM sfdc.knowledge_base__kav WHERE articleNumber = ANY($1)`,
+      `SELECT articlenumber, title, summary, solution__c, description__c FROM sfdc.knowledge_base__kav WHERE articlenumber = ANY($1)`,
       [articleNumbersArray],
     );
 
-    return result.rows.map(({ articleNumber, title, summary, solution__c, description__c }) => ({
-      articleNumber,
+    return result.rows.map(({ articlenumber, title, summary, solution__c, description__c }) => ({
+      articleNumber: articlenumber,
       title,
       summary,
       solution: cleanHtmlForLLM(solution__c),
@@ -180,7 +180,7 @@ const reviewCaseReport = async (reportId) => {
 
           let isJIRAMissing = false;
           if (['Bug', 'Improvement'].includes(caseBucketisationResponse.category)) {
-            if (!jiraDetails) {
+            if (!basicInfo.jiraCase) {
               isJIRAMissing = true;
             }
           }
@@ -188,11 +188,11 @@ const reviewCaseReport = async (reportId) => {
           let isKBMissing = false;
           if (['Customer Assistance', 'Customer Questions', 'Bug'].includes(caseBucketisationResponse.category)) {
             if (caseBucketisationResponse.category === 'Bug') {
-              if (basicInfo.jiraCase) {
-                // If JIRA is already present, then we can have a KB article indicating that it is a known bug
+              if (basicInfo.jiraCase && !basicInfo.kbArticle) {
+                // If JIRA is already present and KB article is not present, then we can have a KB article indicating that it is a known bug
                 isKBMissing = true;
               }
-            } else if (!kbDetails) {
+            } else if (!basicInfo.kbArticle) {
               isKBMissing = true;
             }
           }

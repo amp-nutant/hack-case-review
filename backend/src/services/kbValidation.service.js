@@ -63,7 +63,7 @@ async function checkBatchKBRelevance(kbList, caseContext) {
     return {
       caseSubject: caseContext.subject?.substring(0, 50),
       evaluatedCount: 0,
-      relevantKBs: [],
+      kbScoresAndRecommendations: [],
       summary: 'No KB articles provided for evaluation.',
     };
   }
@@ -74,7 +74,7 @@ async function checkBatchKBRelevance(kbList, caseContext) {
     return {
       caseSubject: caseContext.subject?.substring(0, 50),
       evaluatedCount: 1,
-      relevantKBs: [result],
+      kbScoresAndRecommendations: [result],
       summary: result.isRelevant
         ? `Found 1 relevant KB: ${result.kbTitle}`
         : 'The provided KB article is not relevant to this case.',
@@ -127,11 +127,18 @@ async function validateKBRelevance(kbArticles, caseData, options = {}) {
   // Check relevance
   const result = await checkBatchKBRelevance(kbArticles, caseContext);
 
-  const filteredThresholds = result.kbScoresAndRecommendations?.filter(kb => kb.relevanceScore >= threshold) || [];
+  let kbScoresAndRecommendations = [];
+  if (Array.isArray(result.kbScoresAndRecommendations)) {
+    kbScoresAndRecommendations = result.kbScoresAndRecommendations;
+  } else {
+    kbScoresAndRecommendations = [result];
+  }
+
+  const filteredThresholds = kbScoresAndRecommendations?.filter(kb => kb.relevanceScore >= threshold) || [];
 
   return {
     isValid: filteredThresholds.length > 0,
-    reason: filteredThresholds.length > 0 ? filteredThresholds[0].reasoning : result.kbScoresAndRecommendations?.[0]?.reasoning,
+    reason: filteredThresholds.length > 0 ? filteredThresholds[0].reasoning : kbScoresAndRecommendations?.[0]?.reasoning,
   };
 }
 

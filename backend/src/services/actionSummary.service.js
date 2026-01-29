@@ -192,7 +192,7 @@ export function getFixedJIRAsNeedingCustomerUpdate(caseList, topN = 10) {
 export function getCasesWithMissingKB(caseList) {
   // Cases where KB should exist but doesn't
   const kbMissingCases = caseList.filter(
-    (c) => c.kb?.missing || c.identifiers?.includes('kb_missing')
+    (c) => c.kb && c.kb.missing
   );
 
   // Cases where KB exists but is not valid/relevant
