@@ -17,7 +17,7 @@ const navigationItems = [
   { key: '1', label: 'Overview', path: '' },
   { key: '2', label: 'Action Center', path: 'action-center' },
   { key: '3', label: 'Case List', path: 'cases' },
-  { key: '4', label: 'Issue Clusters', path: 'clusters' },
+  { key: '4', label: 'Issue Groups', path: 'issue-groups' },
   { key: '5', label: 'NLP Chat', path: 'chat' },
   { key: '6', label: 'Charts & Graphs', path: 'graphs' },
 ];
