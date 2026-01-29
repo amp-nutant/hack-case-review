@@ -66,3 +66,7 @@ export const invokeLLMAPI = async ({ systemPrompt, userPrompt, maxTokens = 4096,
   }
 };
 
+export default {
+  invokeLLMAPI,
+};
+

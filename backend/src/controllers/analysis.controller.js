@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Analysis, Report, Case } from '../models/index.js';
 import { generateMockAnalysis, generateMockClusters } from '../utils/dataSimulator.js';
 import llmService from '../services/llm.service.js';
@@ -61,29 +62,16 @@ export const getClusters = async (req, res, next) => {
       const clusters = generateMockClusters();
       return res.json(clusters);
     }
-    
-    // Check if analysis exists with clusters
-    const analysis = await Analysis.findOne({ reportId });
-    
-    if (analysis?.clusters?.length > 0) {
-      return res.json(analysis.clusters);
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.json([]);
     }
-    
-    // Generate mock clusters
-    const clusters = generateMockClusters();
-    
-    // Save clusters
-    if (analysis) {
-      analysis.clusters = clusters;
-      await analysis.save();
-    } else {
-      await Analysis.create({
-        reportId,
-        clusters,
-      });
-    }
-    
-    res.json(clusters);
+
+    const clusteredCases = mongoose.connection.collection('clustered_cases');
+    const firstEntry = await clusteredCases.findOne({}, { sort: { _id: 1 } });
+    const clusters = Array.isArray(firstEntry?.clusters) ? firstEntry.clusters : [];
+
+    return res.json(clusters);
   } catch (error) {
     next(error);
   }
