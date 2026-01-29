@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
   TextLabel,
@@ -8,15 +9,145 @@ import {
   AIIcon,
   Button,
   Title,
+  Loader,
+  StackingLayout,
 } from '@nutanix-ui/prism-reactjs';
 import { MiniCard, BigCard } from '../../components/common';
 import { mockDashboardData } from '../../data/mockDashboard';
+import overviewApi from '../../services/overviewApi';
 import './DashboardOverview.css';
 
 function DashboardOverview() {
   const { reportId } = useOutletContext();
   const navigate = useNavigate();
-  const data = mockDashboardData;
+  const [overviewStats, setOverviewStats] = useState({
+    totalCases: mockDashboardData.totalCases,
+    bucketTotal: mockDashboardData.buckets.total,
+    topIssues: mockDashboardData.buckets.topIssues,
+    kbJiraIssuesTotal: mockDashboardData.kbJiraIssues.total,
+    kbMissingTotal: mockDashboardData.kbJiraIssues.kbMissing,
+    jiraOpenTotal: mockDashboardData.kbJiraIssues.jiraOpen,
+    closedTagsTotal: mockDashboardData.closedTags.total,
+    closedTagsTopTags: mockDashboardData.closedTags.topTags,
+    topKBGaps: mockDashboardData.kbJiraIssues.topKBGaps,
+  });
+  const [overviewLoading, setOverviewLoading] = useState(true);
+
+  useEffect(() => {
+    if (!reportId) {
+      return;
+    }
+
+    let isActive = true;
+
+    setOverviewLoading(true);
+    overviewApi
+      .getByReport(reportId)
+      .then((response) => {
+        if (!isActive) {
+          return;
+        }
+
+        const totalCases = response?.data?.totalCases;
+        const bucketTotal = response?.data?.buckets?.total;
+        const topIssues = response?.data?.buckets?.topIssues;
+        const kbJiraIssuesTotal = response?.data?.kbJiraIssues?.total;
+        const kbMissingTotal = response?.data?.kbJiraIssues?.kbMissing;
+        const jiraOpenTotal = response?.data?.kbJiraIssues?.jiraOpen;
+        const topKBGaps = response?.data?.kbJiraIssues?.topKBGaps;
+        const closedTagsTotal = response?.data?.closedTags?.total;
+        const closedTagsTopTags = response?.data?.closedTags?.topTags;
+
+        setOverviewStats((prev) => ({
+          totalCases: Number.isFinite(totalCases) ? totalCases : prev.totalCases,
+          bucketTotal: Number.isFinite(bucketTotal) ? bucketTotal : prev.bucketTotal,
+          topIssues: Array.isArray(topIssues) && topIssues.length > 0 ? topIssues : prev.topIssues,
+          kbJiraIssuesTotal: Number.isFinite(kbJiraIssuesTotal)
+            ? kbJiraIssuesTotal
+            : prev.kbJiraIssuesTotal,
+          kbMissingTotal: Number.isFinite(kbMissingTotal) ? kbMissingTotal : prev.kbMissingTotal,
+          jiraOpenTotal: Number.isFinite(jiraOpenTotal) ? jiraOpenTotal : prev.jiraOpenTotal,
+          topKBGaps: Array.isArray(topKBGaps) && topKBGaps.length > 0 ? topKBGaps : prev.topKBGaps,
+          closedTagsTotal: Number.isFinite(closedTagsTotal)
+            ? closedTagsTotal
+            : prev.closedTagsTotal,
+          closedTagsTopTags:
+            Array.isArray(closedTagsTopTags) && closedTagsTopTags.length > 0
+              ? closedTagsTopTags
+              : prev.closedTagsTopTags,
+        }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isActive) {
+          setOverviewLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [reportId]);
+
+  const data = useMemo(() => {
+    const colorMap = new Map(
+      mockDashboardData.buckets.items.map((bucket) => [bucket.name, bucket.fill])
+    );
+    const topIssues = overviewStats.topIssues.map((bucket, index) => ({
+      id: bucket.id ?? index + 1,
+      name: bucket.name,
+      count: bucket.count,
+      fill: bucket.fill || colorMap.get(bucket.name) || '#9aa5b5',
+    }));
+
+    const closedTagColorMap = new Map(
+      mockDashboardData.closedTags.items.map((tag) => [tag.name, tag.fill])
+    );
+    const topTags = overviewStats.closedTagsTopTags.map((tag, index) => ({
+      id: tag.id ?? index + 1,
+      name: tag.name,
+      count: tag.count,
+      percentage: tag.percentage,
+      fill: tag.fill || closedTagColorMap.get(tag.name) || '#9aa5b5',
+    }));
+
+    return {
+      ...mockDashboardData,
+      totalCases: overviewStats.totalCases,
+      buckets: {
+        ...mockDashboardData.buckets,
+        total: overviewStats.bucketTotal,
+        topIssues,
+      },
+      kbJiraIssues: {
+        ...mockDashboardData.kbJiraIssues,
+        total: overviewStats.kbJiraIssuesTotal,
+        kbMissing: overviewStats.kbMissingTotal,
+        jiraOpen: overviewStats.jiraOpenTotal,
+        topKBGaps: overviewStats.topKBGaps,
+      },
+      closedTags: {
+        ...mockDashboardData.closedTags,
+        total: overviewStats.closedTagsTotal,
+        topTags,
+      },
+    };
+  }, [overviewStats]);
+
+  if (overviewLoading) {
+    return (
+      <FlexLayout
+        alignItems="center"
+        justifyContent="center"
+        style={{ height: '100%', minHeight: '400px' }}
+      >
+        <StackingLayout alignItems="center" itemSpacing="16px">
+          <Loader />
+          <TextLabel>Loading overview...</TextLabel>
+        </StackingLayout>
+      </FlexLayout>
+    );
+  }
 
   return (
     <FlexLayout flexDirection="column" itemGap="M" style={{ padding: '16px 24px' }}>
@@ -142,7 +273,7 @@ function DashboardOverview() {
                     count={gap.status === 'No Article' ? 'KB' : 'JIRA'}
                   />
                   <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY}>
-                    {gap.id}: {gap.title}
+                    {gap.label || `${gap.id}: ${gap.title}`}
                   </TextLabel>
                 </FlexLayout>
                 <Badge color="gray" count={`${gap.caseCount} cases (${gap.percentage}%)`} />
