@@ -224,7 +224,7 @@ function ClusterView() {
         {/* Header */}
         <FlexLayout justifyContent="space-between" alignItems="center" style={{ marginBottom: '20px' }}>
           <FlexLayout alignItems="center" itemGap="L">
-            <Title size="h2">Issue Groupings</Title>
+            <Title size="h2">Issue Groups</Title>
             <FlexLayout alignItems="center" itemGap="S">
               <Badge color="blue" count={`${summary.significantClusters} clusters`} />
               <Badge color="green" count={`${summary.casesInSignificantClusters} cases grouped`} />
