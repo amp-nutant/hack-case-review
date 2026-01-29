@@ -31,10 +31,10 @@ function AnalysisDashboard() {
         justifyContent="center"
         style={{ height: '100%', minHeight: '400px' }}
       >
-        <StackingLayout alignItems="center" itemSpacing="16px">
+        <FlexLayout justifyContent="center" flexDirection="column" alignItems="center" itemGap="S">
           <Loader />
-          <TextLabel>Loading analysis...</TextLabel>
-        </StackingLayout>
+          <TextLabel>Loading data...</TextLabel>
+        </FlexLayout>
       </FlexLayout>
     );
   }

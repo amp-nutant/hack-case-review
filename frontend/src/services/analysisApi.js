@@ -7,7 +7,7 @@ export const analysisApi = {
   
   chat: (reportId, message) => api.post('/analysis/chat', { reportId, message }),
   
-  getClusters: (reportId) => api.get(`/clusters/${reportId}`),
+  getClusters: (reportId) => api.get(`/issue-groups/${reportId}`),
   
   getChartData: (reportId, chartType) => api.get(`/charts/${reportId}/${chartType}`),
 };

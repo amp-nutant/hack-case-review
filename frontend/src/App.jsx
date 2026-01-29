@@ -34,7 +34,7 @@ function App() {
           <Route path="action-center" element={<ActionCenter />} />
           <Route path="cases" element={<CaseList />} />
           <Route path="cases/:caseId" element={<CaseDetail />} />
-          <Route path="clusters" element={<ClusterView />} />
+          <Route path="issue-groups" element={<ClusterView />} />
           <Route path="chat" element={<NLPChat />} />
           <Route path="graphs" element={<GraphView />} />
         </Route>
