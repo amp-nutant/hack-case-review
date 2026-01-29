@@ -36,7 +36,7 @@ router.use('/analysis', analysisRoutes);
 router.use('/charts', chartsRoutes);
 
 // Clusters routes
-router.use('/clusters', clustersRoutes);
+router.use('/issue-groups', clustersRoutes);
 
 // Root API route
 router.get('/', (_req, res) => {
@@ -51,7 +51,7 @@ router.get('/', (_req, res) => {
       upload: '/api/upload',
       analysis: '/api/analysis',
       charts: '/api/charts',
-      clusters: '/api/clusters',
+      clusters: '/api/issue-groups',
       llm: '/api/llm',
     },
   });
