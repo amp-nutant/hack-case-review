@@ -7,7 +7,6 @@ import uploadRoutes from './upload.routes.js';
 import analysisRoutes from './analysis.routes.js';
 import chartsRoutes from './charts.routes.js';
 import clustersRoutes from './clusters.routes.js';
-import casesController from '../controllers/cases.controller.js';
 
 const router = Router();
 
@@ -17,11 +16,8 @@ router.use('/health', healthRoutes);
 // LLM routes
 router.use('/llm', llmRoutes);
 
-// Reports routes
+// Reports routes (includes /reports/:id/cases from case-details)
 router.use('/reports', reportsRoutes);
-
-// Get cases by report (nested under reports)
-router.get('/reports/:id/cases', casesController.getByReport);
 
 // Cases routes
 router.use('/cases', casesRoutes);

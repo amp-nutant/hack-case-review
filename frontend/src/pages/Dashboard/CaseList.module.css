@@ -85,7 +85,7 @@
 /* Subject/Title cell - uses Truncate HOC */
 .subjectCell {
   display: block;
-  max-width: 230px;
+  max-width: 210px;
 }
 
 /* Account cell - uses Truncate HOC */
@@ -105,7 +105,7 @@
 /* Closed tag cell - uses Truncate HOC */
 .tagCell {
   display: block;
-  max-width: 220px;
+  max-width: 200px;
 }
 
 /* Row hover effect */
@@ -113,11 +113,11 @@
   cursor: pointer;
 }
 
-/* Table cell padding adjustment */
+/* Compact table spacing override */
 :global(.ntnx-table-body-cell) {
-  padding: 12px 16px !important;
+  padding: 10px 14px !important;
 }
 
 :global(.ntnx-table-header-cell) {
-  padding: 12px 16px !important;
+  padding: 10px 14px !important;
 }

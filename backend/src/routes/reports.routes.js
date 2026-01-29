@@ -6,6 +6,9 @@ const router = Router();
 // GET /api/reports - Get all reports
 router.get('/', reportsController.getAll);
 
+// GET /api/reports/:id/cases - Get cases for a report from case-details
+router.get('/:id/cases', reportsController.getCasesFromDetails);
+
 // GET /api/reports/:id - Get a single report
 router.get('/:id', reportsController.getById);
 

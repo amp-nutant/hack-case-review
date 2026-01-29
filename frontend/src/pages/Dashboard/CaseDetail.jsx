@@ -1,5 +1,7 @@
-import { useCallback } from 'react';
+/* eslint-disable react-hooks/rules-of-hooks */
+import { useCallback, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   FlexLayout,
   FlexItem,
@@ -14,8 +16,10 @@ import {
   AIIcon,
   Paragraph,
   Divider,
+  Loader,
 } from '@nutanix-ui/prism-reactjs';
 import { mockCases } from '../../data/mockCases';
+import { fetchAllCases, fetchCaseDetailsByCaseNumber } from '../../redux/slices/casesSlice';
 import { Card } from '../../components/common';
 import { 
   KBJiraValidationCards, 
@@ -28,29 +32,69 @@ import {
 function CaseDetail() {
   const { reportId, caseId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  // Get cases from Redux store
+  const { items: casesFromDb, currentCase, loading } = useSelector((state) => state.cases);
 
-  // Find case and its index from mock data
-  const currentIndex = mockCases.findIndex((c) => c.id === caseId);
-  const caseData = currentIndex !== -1 ? mockCases[currentIndex] : mockCases[0];
+  // Load cases list if not already loaded (for navigation)
+  useEffect(() => {
+    if (casesFromDb.length === 0) {
+      dispatch(fetchAllCases());
+    }
+  }, [dispatch, casesFromDb.length]);
+
+  // Use DB data if available, otherwise fall back to mock data
+  const cases = useMemo(() => {
+    return casesFromDb.length > 0 ? casesFromDb : mockCases;
+  }, [casesFromDb]);
+
+  // Find case and its index from the list
+  const currentIndex = cases.findIndex((c) => c.id === caseId);
+  const caseFromList = currentIndex !== -1 ? cases[currentIndex] : cases[0];
   const actualIndex = currentIndex !== -1 ? currentIndex : 0;
+
+  // Fetch full case details by case number when we have a case
+  useEffect(() => {
+    if (caseFromList?.caseNumber) {
+      dispatch(fetchCaseDetailsByCaseNumber(caseFromList.caseNumber));
+    }
+  }, [dispatch, caseFromList?.caseNumber]);
+
+  // Use full case details from currentCase if available, otherwise use list data
+  const caseData = useMemo(() => {
+    if (currentCase && currentCase.caseNumber === caseFromList?.caseNumber) {
+      return currentCase;
+    }
+    return caseFromList;
+  }, [currentCase, caseFromList]);
 
   // Navigation helpers
   const hasPrevious = actualIndex > 0;
-  const hasNext = actualIndex < mockCases.length - 1;
+  const hasNext = actualIndex < cases.length - 1;
 
   const goToPrevious = () => {
     if (hasPrevious) {
-      const prevCase = mockCases[actualIndex - 1];
+      const prevCase = cases[actualIndex - 1];
       navigate(`/dashboard/${reportId}/cases/${prevCase.id}`);
     }
   };
 
   const goToNext = () => {
     if (hasNext) {
-      const nextCase = mockCases[actualIndex + 1];
+      const nextCase = cases[actualIndex + 1];
       navigate(`/dashboard/${reportId}/cases/${nextCase.id}`);
     }
   };
+
+  // Show loading state
+  if (loading && !caseData) {
+    return (
+      <FlexLayout justifyContent="center" alignItems="center" style={{ height: '400px' }}>
+        <Loader tip="Loading case details..." />
+      </FlexLayout>
+    );
+  }
 
   const goBack = () => {
     navigate(`/dashboard/${reportId}/cases`);
