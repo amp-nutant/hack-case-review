@@ -118,7 +118,7 @@
 }
 
 /* ===== DELETE BUTTON ===== */
-.deleteButton {
+.deleteButton, .exportButton {
   padding: 6px;
   border-radius: 4px;
   color: #9ca3af;
@@ -129,6 +129,11 @@
 .deleteButton:hover {
   background: #fef2f2;
   color: #dc2626;
+}
+
+.exportButton:hover {
+  background: #fef2f2;
+  color: #22a5f7;
 }
 
 /* ===== REPORT NAME ===== */

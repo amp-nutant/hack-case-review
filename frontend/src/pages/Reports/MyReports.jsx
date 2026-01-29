@@ -20,6 +20,7 @@ import {
   Truncate,
   PlusIcon,
   ShowIcon,
+  ExportIcon,
 } from '@nutanix-ui/prism-reactjs';
 
 // Create Truncate HOC for title - shows full text in tooltip on hover
@@ -64,9 +65,17 @@ const ReportCard = ({ report, onDelete, onView, onExport, isFetching, onFetchRep
     return `${diffDays} days ago`;
   };
 
-  const totalCases = report?.summary?.totalCases ?? report?.caseCount ?? 0;
-  const topBuckets = report?.topBuckets || [];
-  const topComponents = report?.topComponents || [];
+  const reviewSummary = report?.reviewSummary || {};
+
+  let topBuckets = reviewSummary.buckets || [];
+  topBuckets = [...topBuckets].sort((a, b) => b.count - a.count);
+  topBuckets = topBuckets.slice(0, 2);
+
+  let topComponents = reviewSummary.closedTags || [];
+  topComponents = [...topComponents].sort((a, b) => b.count - a.count);
+  topComponents = topComponents.slice(0, 2);
+
+  const totalCases =  report?.caseCount ?? 0;
   const createdAt = report?.createdAt ? formatDate(report.createdAt) : '—';
   const updatedAt = report?.updatedAt ? getRelativeTime(report.updatedAt) : '';
 
@@ -80,11 +89,6 @@ const ReportCard = ({ report, onDelete, onView, onExport, isFetching, onFetchRep
   const handleExport = (e) => {
     e.stopPropagation();
     onExport(report);
-  };
-
-  const handleView = (e) => {
-    e.stopPropagation();
-    onFetchReport(report);
   };
 
   const isProcessing = report?.status === 'processing';
@@ -136,9 +140,16 @@ const ReportCard = ({ report, onDelete, onView, onExport, isFetching, onFetchRep
               </FlexLayout>
             </FlexLayout>
           </FlexLayout>
-          <div className={styles.deleteButton} onClick={handleDelete} style={{ flexShrink: 0, marginLeft: '8px' }}>
-            <RemoveIcon />
-          </div>
+
+          <FlexLayout alignItems="center" itemGap="5px">
+            <div className={styles.exportButton} onClick={handleExport} style={{ flexShrink: 0, marginLeft: '8px' }}>
+              <DownloadIcon />
+            </div>
+
+            <div className={styles.deleteButton} onClick={handleDelete} style={{ flexShrink: 0, marginLeft: '8px' }}>
+              <RemoveIcon />
+            </div>
+          </FlexLayout>
         </FlexLayout>
 
         {/* Processing State */}
@@ -193,7 +204,7 @@ const ReportCard = ({ report, onDelete, onView, onExport, isFetching, onFetchRep
             {/* Top Components */}
             <FlexLayout flexDirection="column" itemGap="XS">
               <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ fontSize: '11px' }}>
-                Top Components
+                Top Closed Tags
               </TextLabel>
               <FlexLayout itemGap="XS" style={{ flexWrap: 'wrap' }}>
                 {topComponents.length > 0 ? (
@@ -223,22 +234,6 @@ const ReportCard = ({ report, onDelete, onView, onExport, isFetching, onFetchRep
                 </TextLabel>
               )}
             </FlexLayout>
-
-            {/* Hover Actions - shown inline below date */}
-            {isHovered && (
-              <>
-                {/* Divider below date when hovered */}
-                <Divider />
-                <FlexLayout className={styles.cardActions} itemGap="S" justifyContent="center">
-                  <Button type={Button.ButtonTypes.PRIMARY} onClick={handleView}>
-                    <ShowIcon  /> View
-                  </Button>
-                  <Button type={Button.ButtonTypes.SECONDARY} onClick={handleExport}>
-                    <DownloadIcon /> Export
-                  </Button>
-                </FlexLayout>
-              </>
-            )}
           </>
         )}
       </FlexLayout>
@@ -427,7 +422,7 @@ function MyReports() {
               rowsData={COMPONENT_FILTER_OPTIONS}
               selectedRows={COMPONENT_FILTER_OPTIONS.filter((c) => selectedComponents.includes(c.key))}
               onSelectedChange={(rows) => setSelectedComponents(rows.map((r) => r.key))}
-              inputProps={{ placeholder: 'Search components...' }}
+              inputProps={{ placeholder: 'Search Closed Tags...' }}
             />
           </div>
           <FlexLayout alignItems="center" itemGap="XS">
