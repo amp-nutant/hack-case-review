@@ -455,6 +455,7 @@ function generateTopPriorityActions(summary) {
       priority: 'high',
       category: 'wrong_closed_tags',
       action: `Review ${summary.wrongClosedTags.count} cases with incorrect closure tags`,
+      cases: summary.wrongClosedTags.count,
     });
   }
 
@@ -464,6 +465,7 @@ function generateTopPriorityActions(summary) {
       priority: 'high',
       category: 'open_jiras',
       action: `Prioritize JIRA ${topJira.key} affecting ${topJira.caseCount} cases`,
+      cases: topJira.caseCount,
     });
   }
 
@@ -472,6 +474,7 @@ function generateTopPriorityActions(summary) {
       priority: 'high',
       category: 'jira_creation',
       action: `Create JIRAs for ${summary.jiraCreationNeeded.summary.totalBugs} bugs and ${summary.jiraCreationNeeded.summary.totalImprovements} improvements`,
+      cases: summary.jiraCreationNeeded.summary.total,
     });
   }
 
@@ -481,6 +484,7 @@ function generateTopPriorityActions(summary) {
       priority: 'medium',
       category: 'kb_creation',
       action: `Create KB for "${topRec.product} - ${topRec.skill}" (${topRec.caseCount} cases)`,
+      cases: topRec.caseCount,
     });
   }
 
@@ -489,6 +493,7 @@ function generateTopPriorityActions(summary) {
       priority: 'medium',
       category: 'customer_update',
       action: `Notify ${summary.fixedJirasCustomerUpdate.totalCasesAffected} customers about available fixes`,
+      cases: summary.fixedJirasCustomerUpdate.jiras.length,
     });
   }
 
