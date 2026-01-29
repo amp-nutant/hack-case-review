@@ -30,7 +30,7 @@
 .chatIcon {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2b0334 0%, #150129 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -90,7 +90,7 @@
 
 /* Widget Header Styling */
 .widgetHeader {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #611573 0%, #180030 100%);
   padding: 20px 24px;
   color: white;
 }
@@ -102,8 +102,8 @@
 }
 
 .assistantAvatar {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 14px;
   display: flex;
@@ -117,7 +117,7 @@
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 4px 0;
-  color: white;
+  color: white !important;
 }
 
 .statusIndicator {
@@ -244,7 +244,7 @@
 }
 
 .messageText {
-  padding: 5px 5px 5px 5px !important;
+  padding: 12px 16px;
   border-radius: 18px;
   line-height: 1.6;
   font-size: 14px;
@@ -256,6 +256,7 @@
   color: #374151;
   border: 1px solid #e5e7eb;
   border-bottom-left-radius: 6px;
+  padding: 16px 20px;
 }
 
 .message.user .messageText {
@@ -263,6 +264,66 @@
   color: white;
   border-bottom-right-radius: 6px;
   box-shadow: 0 2px 12px rgba(102, 126, 234, 0.25);
+}
+
+/* Formatted Message Content */
+.formattedContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.messageParagraph {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.messageH3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.bulletItem {
+  display: flex;
+  gap: 8px;
+  padding-left: 4px;
+  align-items: flex-start;
+}
+
+.bullet {
+  color: #667eea;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.numberedItem {
+  display: flex;
+  gap: 8px;
+  padding-left: 4px;
+  align-items: flex-start;
+}
+
+.number {
+  color: #667eea;
+  font-weight: 600;
+  min-width: 20px;
+  flex-shrink: 0;
+}
+
+.indentedLine {
+  padding-left: 28px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.formattedContent strong {
+  color: #1f2937;
+  font-weight: 600;
 }
 
 /* Loading State */
@@ -355,39 +416,72 @@
   transform: translateY(0);
 }
 
-/* Input Section */
+/* Input Section - ChatGPT Style */
 .inputContainer {
-  padding: 20px 20px 20px 20px !important;
+  padding: 16px 20px 20px 20px !important;
   border-top: 1px solid #f0f1f3;
   display: flex;
-  gap: 10px;
-  align-items: center;
-  background: white;
+  background: #f9fafb;
 }
 
 .inputWrapper {
-  flex: 1;
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 26px;
+  padding: 10px 16px;
+  transition: all 0.2s ease;
+}
+
+.inputWrapper:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.addButton {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.addButton:hover {
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+.addButton svg {
+  width: 28px;
+  height: 28px;
 }
 
 .chatInput {
-  width: 100%;
-  padding: 5px 5px 5px 5px !important;
-  border: 2px solid #e5e7eb;
-  border-radius: 16px;
-  font-size: 14px;
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #1f2937;
+  font-size: 15px;
   resize: none;
   font-family: inherit;
-  transition: all 0.2s ease;
-  background: #fafbfc;
-  line-height: 1.1vh;
+  line-height: 1.5;
+  padding: 6px 0;
+  min-height: 24px;
+  max-height: 200px;
 }
 
 .chatInput:focus {
   outline: none;
-  border-color: #667eea;
-  background: white;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
 .chatInput::placeholder {
@@ -395,44 +489,53 @@
 }
 
 .sendButton {
-  padding: 5px 10px 5px 10px !important;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
   border: none;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  transition: all 0.25s ease;
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
 }
 
-.sendButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+.sendButton.sendButtonActive {
+  background: linear-gradient(135deg, #472662 0%, #2c0851 100%);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
 }
 
-.sendButton:active:not(:disabled) {
-  transform: translateY(0);
+.sendButton.sendButtonActive:hover {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.45);
+  transform: scale(1.05);
+}
+
+.sendButton.sendButtonActive:active {
+  transform: scale(0.95);
 }
 
 .sendButton:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
-.sendIcon {
-  font-size: 16px;
-  transition: transform 0.2s ease;
+.sendButton svg {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 
-.sendButton:hover:not(:disabled) .sendIcon {
-  transform: translateX(3px);
+.sendButton.sendButtonActive svg {
+  fill: white;
+}
+
+.sendButton.sendButtonActive svg path {
+  fill: white;
 }
 
 /* Empty State */
@@ -539,8 +642,8 @@
   }
   
   .assistantAvatar {
-    width: 42px;
-    height: 42px;
+    width: 4px;
+    height: 4px;
     font-size: 20px;
   }
   
@@ -632,8 +735,8 @@
   }
   
   .assistantAvatar {
-    width: 36px;
-    height: 36px;
+    width: 30px !;
+    height: 30px;
     font-size: 18px;
     border-radius: 10px;
   }
