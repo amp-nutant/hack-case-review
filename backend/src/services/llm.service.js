@@ -66,3 +66,27 @@ export const invokeLLMAPI = async ({ systemPrompt, userPrompt, maxTokens = 4096,
   }
 };
 
+/**
+ * Chat with the LLM using a message and optional context
+ */
+export const chat = async (message, contextData = {}) => {
+  const systemPrompt = `You are a helpful assistant for analyzing support cases. 
+You have access to the following context data:
+${JSON.stringify(contextData, null, 2)}
+
+Answer questions based on this data.`;
+
+  return invokeLLMAPI({
+    systemPrompt,
+    userPrompt: message,
+    maxTokens: 2048,
+    temperature: 0.7,
+  });
+};
+
+// Default export for backward compatibility
+export default {
+  parseLLMJSONResponse,
+  invokeLLMAPI,
+  chat,
+};
