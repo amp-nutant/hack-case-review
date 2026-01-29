@@ -105,6 +105,27 @@ const splitValues = (value) => {
     .filter(Boolean);
 };
 
+const buildClosedTagMessage = (status, suggestedValue) => {
+  let message = '';
+
+  if (suggestedValue.missingTags && suggestedValue.missingTags.length > 0) {
+    message += `Missing Tags: ${suggestedValue.missingTags.map((tagObj) => tagObj.suggestedTag + ": " + tagObj.reason).join(', ')}`;
+    message += '\n';
+  }
+
+  if (suggestedValue.inaccurateTags && suggestedValue.inaccurateTags.length > 0) {
+    message += `Wrong Tags: ${suggestedValue.inaccurateTags.map((tagObj) => tagObj.tag + ": " + tagObj.reasoning).join(', ')}`;
+    message += '\n';
+  }
+
+  if (suggestedValue.partiallyAccurateTags && suggestedValue.partiallyAccurateTags.length > 0) {
+    message += `Partially Accurate Tags: ${suggestedValue.partiallyAccurateTags.map((tagObj) => tagObj.tag + ": " + tagObj.reasoning).join(', ')}`;
+    message += '\n';
+  }
+
+  return message;
+};
+
 // Helper to build validation message
 const buildValidationMessage = (field, status, suggestedValue, reason) => {
   let message = '';
@@ -321,7 +342,7 @@ function CaseList() {
           column: 'closedTag',
           row: rowKey,
           type: Table.TABLE_ALERT.ERROR,
-          message: buildValidationMessage('Closed Tag', ValidationStatus.WRONG, suggestedValue),
+          message: buildClosedTagMessage(ValidationStatus.WRONG, suggestedValue),
           tooltipProps: {
             oldTooltip: false,
             placement: 'top',

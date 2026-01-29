@@ -146,10 +146,10 @@ const toCaseListDto = (item) => {
     item.jiraTicket ||
     null;
 
-  const normalizeStatus = (flag) => {
-    if (flag === true) return 'valid';
-    if (flag === false) return 'wrong';
-    return 'missing';
+  const normalizeStatus = (details = {}) => {
+    if (details?.missing) return { status: 'missing', reason: '' };
+    if (details?.valid) return { status: 'valid', reason: '' };
+    if (details && details.valid === false) return { status:'wrong', reason: details.reason };
   };
 
   // Build issues array from validation summary
@@ -168,17 +168,19 @@ const toCaseListDto = (item) => {
     bucket: item.bucket || caseInfo.bucket || 'Uncategorized',
     closedTag: {
       value: closedTagValue,
-      status: normalizeStatus(item.isClosedTagValid),
-      suggestedValue: item.recommendedTags?.[0] || item.tagValidationSummary?.tagsWithImprovements?.[0]?.suggestedImprovement || null,
+      status: item.isClosedTagValid ? 'valid' : 'wrong',
+      suggestedValue: item.tagValidationSummary || null,
     },
     kbArticle: {
       value: kbValue,
-      status: normalizeStatus(item.isKBValid),
+      status: normalizeStatus(item.kb)?.status,
+      reason: normalizeStatus(item.kb)?.reason,
       suggestedValue: item.recommendedKB || null,
     },
     jiraTicket: {
       value: jiraValue,
-      status: normalizeStatus(item.isJIRAValid),
+      status: normalizeStatus(item.jira)?.status,
+      reason: normalizeStatus(item.jira)?.reason,
       suggestedValue: item.recommendedJIRA || null,
     },
     issues,

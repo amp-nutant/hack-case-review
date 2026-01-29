@@ -147,10 +147,10 @@ export const getCasesFromDetails = async (req, res, next) => {
 
     const cases = await CaseDetails.find({ reportId: id }).lean();
 
-    const normalizeStatus = flag => {
-      if (flag === true) return 'valid';
-      if (flag === false) return 'wrong';
-      return 'missing';
+    const normalizeStatus = details => {
+      if (details.missing) return { status: 'missing', reason: '' };
+      if (details.valid) return { status: 'valid', reason: '' };
+      if (details.wrong) return { status: 'wrong', reason: details.reason };
     };
 
     const normalized = cases.map(item => {
@@ -172,17 +172,19 @@ export const getCasesFromDetails = async (req, res, next) => {
         description: caseInfo.description || item.description || '',
         closedTag: {
           value: closedTagValue,
-          status: normalizeStatus(item.isClosedTagValid),
+          status: item.isClosedTagValid ? 'valid' : 'wrong',
           suggestedValue: item.recommendedTags?.[0] || item.tagValidationSummary?.tagsWithImprovements?.[0]?.suggestedImprovement || null,
         },
         kbArticle: {
           value: kbValue,
-          status: normalizeStatus(item.isKBValid),
+          status: normalizeStatus(item.kb).status,
+          reason: normalizeStatus(item.kb).reason,
           suggestedValue: item.recommendedKB || null,
         },
         jiraTicket: {
           value: jiraValue,
-          status: normalizeStatus(item.isJIRAValid),
+          status: normalizeStatus(item.jira).status,
+          reason: normalizeStatus(item.jira).reason,
           suggestedValue: item.recommendedJIRA || null,
         },
         issues: item.issues || item.tagValidationSummary?.tagsWithImprovements?.map(t => t.suggestedImprovement) || [],
