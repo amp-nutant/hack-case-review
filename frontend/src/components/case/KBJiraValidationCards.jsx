@@ -420,7 +420,7 @@ const ClosureTagCard = ({ closedTag, onFixTag }) => {
           <FlexLayout itemGap="XS">
             <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ lineHeight: '1.2' }}>Suggested:</TextLabel>
             <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ lineHeight: '1.2' }}>
-              {suggestedValue}
+              {typeof suggestedValue === 'object' ? JSON.stringify(suggestedValue) : suggestedValue}
             </TextLabel>
           </FlexLayout>
         )}
