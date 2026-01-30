@@ -93,6 +93,7 @@ function ClusterView() {
             avgResolutionDays: cluster?.avg_resolution_days || 0,
             uniqueAccounts: cluster?.unique_accounts || 0,
             cases: casesList,
+            product_breakdown: cluster?.product_breakdown || [],
           };
         });
 
@@ -254,7 +255,7 @@ function ClusterView() {
               rowsData={componentOptions}
               selectedRows={componentOptions.filter((c) => selectedComponents.includes(c.key))}
               onSelectedChange={(rows) => setSelectedComponents(rows.map((r) => r.key))}
-              inputProps={{ placeholder: 'Search components...' }}
+              inputProps={{ placeholder: 'Search Products...' }}
             />
           </div>
 
@@ -275,7 +276,7 @@ function ClusterView() {
           <FlexItem style={{ marginLeft: 'auto' }}>
             <FlexLayout alignItems="center" itemGap="S">
               <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ fontSize: '12px' }}>
-                Severity:
+                Case Count:
               </TextLabel>
               <Badge color="red" count="50+ cases" />
               <Badge color="orange" count="20-49 cases" />
@@ -401,13 +402,13 @@ function ClusterView() {
                     </FlexLayout>
 
                     {/* Tags - Only show if there are keywords */}
-                    {cluster.themeKeywords.length > 0 && (
+                    {cluster.product_breakdown?.length > 0 && (
                       <>
                         <Divider style={{ margin: '8px 0' }} />
                         <FlexLayout alignItems="center" itemGap="XS" style={{ flexWrap: 'wrap' }}>
-                          {cluster.themeKeywords.map((tag, idx) => (
+                          {cluster.product_breakdown.filter((productObj) => !!productObj.product).map((productObj, idx) => (
                             <span key={idx} className={styles.tag}>
-                              {tag}
+                              {productObj.product}
                             </span>
                           ))}
                         </FlexLayout>

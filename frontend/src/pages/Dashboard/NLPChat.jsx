@@ -433,7 +433,7 @@ function NLPChat() {
             <div className={styles.chatIcon}>
               <CloudIcon style={{ color: 'white' ,width: '20px', height: '20px' }} />
             </div>
-            <Title size="h2">NLP Chat</Title>
+            <Title size="h2">Servicability Bot</Title>
           </div>
           <div className={styles.messageBadge}>
             {messages.length} {messages.length === 1 ? 'message' : 'messages'}
