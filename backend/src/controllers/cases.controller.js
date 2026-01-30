@@ -279,8 +279,8 @@ const normalizeCaseDetails = (doc) => {
   // Build issues array from validation data
   const issues = [];
   if (tagValidationSummary.inaccurateTags?.length > 0) {
-    issues.push(...tagValidationSummary.inaccurateTags.map(t => 
-      `Replace tag: ${t.tag} → ${t.suggestedTag}`
+    issues.push(...tagValidationSummary.inaccurateTags.filter((t) => t.suggestedReplacement).map(t => 
+      `Replace tag: ${t.tag} → ${t.suggestedReplacement}`
     ));
   }
   if (tagValidationSummary.missingTags?.length > 0) {
