@@ -111,7 +111,8 @@ async function buildContext(query) {
       context.type = 'summary';
       context.data = { 
         caseCount, 
-        clusters: clusterData?.summary,
+        clusterSummary: clusterData?.summary,
+        allClusters: clusterData?.clusters,
         distributions: clusterData?.distributions,
         sampleCases 
       };
@@ -310,6 +311,7 @@ async function buildContext(query) {
     context.data = { 
       summary: clusterData?.summary, 
       distributions: clusterData?.distributions,
+      clusters: clusterData?.clusters,
       caseCount 
     };
     
@@ -380,7 +382,11 @@ ${cd?.kb ? JSON.stringify(cd.kb, null, 2).substring(0, 400) : 'No KB details'}
 ${cd?.jira ? JSON.stringify(cd.jira, null, 2).substring(0, 400) : 'No JIRA details'}
 `;
   } else if (context.type === 'cluster_analysis') {
-    const topClusters = context.data?.summary?.top_10_clusters || [];
+    // Use full clusters array with LLM-generated names, sorted by size
+    const allClusters = context.data?.clusters || [];
+    const topClusters = [...allClusters]
+      .sort((a, b) => (b.size || 0) - (a.size || 0))
+      .slice(0, 10);
     const distributions = context.data?.distributions || {};
     
     contextSection = `
@@ -393,11 +399,17 @@ ${cd?.jira ? JSON.stringify(cd.jira, null, 2).substring(0, 400) : 'No JIRA detai
 **Cluster Size Statistics:**
 - Min: ${context.data?.summary?.cluster_size_stats?.min || 'N/A'}
 - Max: ${context.data?.summary?.cluster_size_stats?.max || 'N/A'}
-- Mean: ${context.data?.summary?.cluster_size_stats?.mean || 'N/A'}
+- Mean: ${context.data?.summary?.cluster_size_stats?.mean?.toFixed(2) || 'N/A'}
 - Median: ${context.data?.summary?.cluster_size_stats?.median || 'N/A'}
 
-**Top Issue Categories (Clusters):**
-${topClusters.map((c, i) => `${i+1}. **${c.title}** - ${c.size} cases (Cluster ID: ${c.cluster_id})`).join('\n')}
+**Top Issue Categories (by LLM-generated cluster names):**
+${topClusters.map((c, i) => {
+  const name = c.generated_name || c.representative_title || 'Unnamed';
+  const confidence = c.name_confidence ? ` (${(c.name_confidence * 100).toFixed(0)}% confidence)` : '';
+  const keywords = c.theme_keywords?.slice(0, 5).join(', ') || '';
+  return `${i+1}. **${name}**${confidence} - ${c.size} cases
+   - Keywords: ${keywords || 'N/A'}`;
+}).join('\n')}
 
 **Product Distribution:**
 ${distributions.by_product?.map(p => `- ${p.product || 'Unknown'}: ${p.count} cases (${p.percentage}%)`).join('\n') || 'No data'}
@@ -409,12 +421,22 @@ ${distributions.by_priority?.map(p => `- ${p.priority}: ${p.count} cases (${p.pe
 ${distributions.by_complexity?.map(c => `- ${c.complexity}: ${c.count} cases (${c.percentage}%)`).join('\n') || 'No data'}
 `;
   } else if (context.type === 'summary') {
+    // Use LLM-generated cluster names for top issues
+    const topClustersSummary = (context.data?.allClusters || [])
+      .sort((a, b) => (b.size || 0) - (a.size || 0))
+      .slice(0, 5);
+    
     contextSection = `
 ## Summary Context
 **Total Cases in Database:** ${context.data?.caseCount || 'N/A'}
-**Total Clusters:** ${context.data?.clusters?.total_clusters || 'N/A'}
-**Significant Clusters:** ${context.data?.clusters?.significant_clusters || 'N/A'}
-**Cases in Significant Clusters:** ${context.data?.clusters?.cases_in_significant_clusters || 'N/A'}
+**Total Clusters:** ${context.data?.clusterSummary?.total_clusters || 'N/A'}
+**Significant Clusters:** ${context.data?.clusterSummary?.significant_clusters || 'N/A'}
+**Cases in Significant Clusters:** ${context.data?.clusterSummary?.cases_in_significant_clusters || 'N/A'}
+
+**Top Issue Categories (LLM-generated names):**
+${topClustersSummary.map((c, i) => 
+  `${i+1}. ${c.generated_name || c.representative_title || 'Unnamed'} (${c.size} cases)`
+).join('\n') || 'No cluster data available'}
 
 **Product Distribution:**
 ${context.data?.distributions?.by_product?.slice(0, 5).map(p => `- ${p.product || 'Unknown'}: ${p.count} (${p.percentage}%)`).join('\n') || 'No data'}
@@ -554,19 +576,23 @@ ${customerCases.map(c => {
 **Average Resolution Time by Cluster:**
 
 ${resData?.clusters?.slice(0, 10).map(c => 
-  `- **${c.representative_title || c.generated_name}**: Avg ${c.avg_resolution_days?.toFixed(1) || 'N/A'} days (${c.size} cases)`
+  `- **${c.generated_name || c.representative_title || 'Unnamed'}**: Avg ${c.avg_resolution_days?.toFixed(1) || 'N/A'} days (${c.size} cases)`
 ).join('\n') || 'No cluster data available'}
 `;
   } else {
-    // Default / general context
+    // Default / general context - use LLM-generated cluster names
+    const topClustersGeneral = (context.data?.clusters || [])
+      .sort((a, b) => (b.size || 0) - (a.size || 0))
+      .slice(0, 5);
+    
     contextSection = `
 ## General Context
 **Total Cases:** ${context.data?.caseCount || 'N/A'}
 **Total Clusters:** ${context.data?.summary?.total_clusters || 'N/A'}
 
-**Top Issue Categories:**
-${context.data?.summary?.top_10_clusters?.slice(0, 5).map((c, i) => 
-  `${i+1}. ${c.title} (${c.size} cases)`
+**Top Issue Categories (LLM-generated names):**
+${topClustersGeneral.map((c, i) => 
+  `${i+1}. ${c.generated_name || c.representative_title || 'Unnamed'} (${c.size} cases)`
 ).join('\n') || 'No cluster data available'}
 
 **Product Distribution:**
