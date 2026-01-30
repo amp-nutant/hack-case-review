@@ -168,35 +168,15 @@ function DashboardOverview() {
       <FlexLayout justifyContent="space-between" alignItems="center">
         <FlexLayout alignItems="center" itemGap="L">
           <Title size="h2">Overview</Title>
-          <FlexLayout alignItems="center" itemGap="S">
-            <Badge color="gray" count={`${data.totalCases} cases`} />
-            <Badge color="blue" count={data.releaseVersion} />
-          </FlexLayout>
         </FlexLayout>
       </FlexLayout>
 
-      {/* AI Insight Alert */}
-      <Alert
-        type={Alert.AlertTypes.INFO}
-        message={
-          <FlexLayout justifyContent="space-between" alignItems="center" itemGap="S" style={{ padding: '5px' }}>
-            <FlexLayout flexDirection="column" alignItems="center" itemGap="S">
-              <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ lineHeight: '1.2' }}>
-                {data.aiInsight.description}
-              </TextLabel>
-            </FlexLayout>
-            <Button style={{ width: '150px' }} onClick={() => navigate(`/dashboard/${reportId}/chat`)}>
-              <AIIcon /> Ask AI
-            </Button>
-          </FlexLayout>
-        }
-      />
       {/* Metrics Row */}
       <FlexLayout itemGap="S" flexWrap="wrap">
         <MiniCard title="Total Cases" count={data.totalCases} />
         <MiniCard title="Case Buckets Identified" count={data.buckets.total} />
         <MiniCard title="Actions Required" count={data.actions.total} />
-        <MiniCard title="KB/JIRA Issues" count={data.kbJiraIssues.total} />
+        <MiniCard title="Incorrect KB/JIRA Attachments" count={data.kbJiraIssues.total} />
         <MiniCard title="Closed Tags" count={data.closedTags.total} />
       </FlexLayout>
 
@@ -264,14 +244,14 @@ function DashboardOverview() {
 
         {/* KB/JIRA Analysis */}
         <BigCard
-          title="KB/JIRA Analysis"
+          title="KB/JIRA Case Linking Analysis"
           linkTitle="View Cases"
           linkRoute={`/dashboard/${reportId}/cases`}
         >
           {/* Stats Row using MiniCard */}
           <FlexLayout itemGap="S" style={{ marginBottom: '16px' }}>
             <MiniCard title="KB Missing" count={data.kbJiraIssues.kbMissing} countColor="#ef4444" />
-            <MiniCard title="KB Outdated" count={data.kbJiraIssues.kbOutdated} countColor="#f97316" />
+            <MiniCard title="KB Improvements" count={data.kbJiraIssues.kbOutdated} countColor="#f97316" />
             <MiniCard title="JIRA Open" count={data.kbJiraIssues.jiraOpen} countColor="#8b5cf6" />
           </FlexLayout>
 

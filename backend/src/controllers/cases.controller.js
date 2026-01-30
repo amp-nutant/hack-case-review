@@ -157,8 +157,8 @@ const toCaseListDto = (item) => {
   if (item.tagValidationSummary?.tagsWithImprovements?.length > 0) {
     issues.push(...item.tagValidationSummary.tagsWithImprovements.map(t => t.suggestedImprovement));
   }
-  if (item.isKBValid === false) issues.push('KB validation issue');
-  if (item.isJIRAValid === false) issues.push('JIRA validation issue');
+  if (item.kb?.valid === false) issues.push('KB validation issue');
+  if (item.jira?.valid === false) issues.push('JIRA validation issue');
   if (item.isClosedTagValid === false) issues.push('Closed tag validation issue');
 
   return {
@@ -173,19 +173,19 @@ const toCaseListDto = (item) => {
     },
     kbArticle: {
       value: kbValue,
-      status: normalizeStatus(item.kb)?.status,
-      reason: normalizeStatus(item.kb)?.reason,
+      status: normalizeStatus(item.kb?.status),
+      reason: normalizeStatus(item.kb?.reason),
       suggestedValue: item.recommendedKB || null,
     },
     jiraTicket: {
       value: jiraValue,
-      status: normalizeStatus(item.jira)?.status,
-      reason: normalizeStatus(item.jira)?.reason,
+      status: normalizeStatus(item.jira?.status),
+      reason: normalizeStatus(item.jira?.reason),
       suggestedValue: item.recommendedJIRA || null,
     },
     issues,
-    isKBValid: item.isKBValid,
-    isJIRAValid: item.isJIRAValid,
+    isKBValid: item.kb?.valid,
+    isJIRAValid: item.jira?.valid,
     isClosedTagValid: item.isClosedTagValid,
   };
 };
@@ -287,8 +287,8 @@ const normalizeCaseDetails = (doc) => {
       `Improve tag: ${t.tag} → ${t.suggestedImprovement}`
     ));
   }
-  if (doc.isKBValid === false) issues.push('Outdated KB article');
-  if (doc.isJIRAValid === false) issues.push('No JIRA ticket attached');
+  if (doc.kb?.valid === false) issues.push('Outdated KB article');
+  if (doc.jira?.valid === false) issues.push('No JIRA ticket attached');
   if (doc.isClosedTagValid === false) issues.push('Closed tag validation issue');
 
   // Generate actionsTaken from conversation history (support responses with meaningful content)
@@ -357,7 +357,7 @@ const normalizeCaseDetails = (doc) => {
     },
     kbArticle: {
       value: kbValue,
-      status: normalizeValidationStatus(doc.isKBValid),
+      status: normalizeValidationStatus(doc.kb?.valid),
       suggestedValue: null,
       reason: kbValue
         ? (doc.isKBValid === false ? 'Outdated: KB does not apply to current version' : 'Valid KB article attached')
@@ -365,7 +365,7 @@ const normalizeCaseDetails = (doc) => {
     },
     jiraTicket: {
       value: jiraValue,
-      status: normalizeValidationStatus(doc.isJIRAValid),
+      status: normalizeValidationStatus(doc.jira?.valid),
       suggestedValue: null,
       reason: jiraValue
         ? (doc.isJIRAValid === false ? 'JIRA ticket validation issue' : 'Valid JIRA ticket attached')
@@ -373,8 +373,8 @@ const normalizeCaseDetails = (doc) => {
     },
     
     // Validation flags
-    isKBValid: doc.isKBValid ?? null,
-    isJIRAValid: doc.isJIRAValid ?? null,
+    isKBValid: doc.kb?.valid ?? null,
+    isJIRAValid: doc.jira?.valid ?? null,
     isClosedTagValid: doc.isClosedTagValid ?? null,
     
     // Validation summary

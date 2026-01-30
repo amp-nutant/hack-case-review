@@ -423,8 +423,8 @@ function CaseList() {
 
   // Bucket badge renderer
   const renderBucketBadge = useCallback((bucket) => {
-    const color = bucketColors[bucket] || '#9aa5b5';
-    return <Badge color={color} count={bucket} type="tag" />;
+    //const color = bucketColors[bucket] || '#9aa5b5';
+    return <Badge color="gray" count={bucket} type="tag" />;
   }, []);
 
   // Table columns configuration
