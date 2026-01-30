@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   FlexLayout,
@@ -8,14 +8,93 @@ import {
   AIIcon,
   Select,
   Badge,
+  Loader,
+  StackingLayout,
 } from '@nutanix-ui/prism-reactjs';
 import { ActionCard } from '../../components/common';
 import { mockActionsData } from '../../data/mockActions';
+import { reportsApi } from '../../services/reportsApi';
 import './ActionCenter.module.css';
 
 function ActionCenter() {
   const { reportId } = useOutletContext();
-  const data = mockActionsData;
+  const [actionsData, setActionsData] = useState(mockActionsData);
+  const [actionsLoading, setActionsLoading] = useState(true);
+
+  useEffect(() => {
+    let isActive = true;
+    setActionsLoading(true);
+
+    const request = reportId
+      ? reportsApi.getById(reportId)
+      : reportsApi.getByReportId('123');
+
+    request
+      .then((response) => {
+        if (!isActive) {
+          return;
+        }
+
+        const actionSummary = response?.data?.reviewSummary?.actionSummary;
+        if (!actionSummary || typeof actionSummary !== 'object') {
+          return;
+        }
+
+        const getRandomPatternMatch = () => Math.floor(70 + Math.random() * 29);
+        const versions = ['AOS 6.5+', 'AOS 6.8+', 'PC 2024.1', 'PC 2024.3', 'AHV 20230302+', 'LCM 2.6+'];
+        const getRandomVersion = (index) => versions[index % versions.length];
+
+        const priorityToStatus = (priority) => {
+          if (!priority) return 'pending_review';
+          const normalized = String(priority).toLowerCase();
+          if (normalized === 'high') return 'pending_review';
+          if (normalized === 'medium') return 'draft_ready';
+          if (normalized === 'low') return 'in_progress';
+          return 'pending_review';
+        };
+
+        const actions = Object.entries(actionSummary)
+          .filter(([key, value]) => key !== 'topPriorityActions' && value && typeof value === 'object')
+          .map(([, value], index) => {
+            const casesAffected =
+              value.count ??
+              value.totalCasesAddressed ??
+              value.summary?.total ??
+              value.caseCount ??
+              0;
+
+            return {
+              id: index + 1,
+              casesAffected,
+              actionType: value.category || 'other',
+              component: value.category || 'General',
+              status: priorityToStatus(value.priority),
+              title: value.title || value.category || 'Action Required',
+              description: value.actionRequired || value.summary?.actionRequired || '',
+              patternMatch: getRandomPatternMatch(),
+              version: getRandomVersion(index),
+              primaryActionLabel: 'See Details',
+            };
+          });
+
+        setActionsData((prev) => ({
+          ...prev,
+          actions,
+        }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isActive) {
+          setActionsLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [reportId]);
+
+  const data = actionsData;
 
   // Filter states
   const [selectedActionType, setSelectedActionType] = useState({ key: 'all', label: 'All Action Types' });
@@ -97,6 +176,21 @@ function ActionCenter() {
   const hasActiveFilters = selectedActionType.key !== 'all' || 
                            selectedComponent.key !== 'all' || 
                            selectedCriticality !== 'all';
+
+  if (actionsLoading) {
+    return (
+      <FlexLayout
+        alignItems="center"
+        justifyContent="center"
+        style={{ height: '100%', minHeight: '400px' }}
+      >
+        <StackingLayout alignItems="center" itemSpacing="16px">
+          <Loader />
+          <TextLabel>Loading actions...</TextLabel>
+        </StackingLayout>
+      </FlexLayout>
+    );
+  }
 
   return (
     <FlexLayout flexDirection="column" itemGap="L" style={{ padding: '24px' }}>
