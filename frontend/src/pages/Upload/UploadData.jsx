@@ -143,10 +143,12 @@ function UploadData() {
     try {
       const result = await dispatch(uploadReport(selectedFile)).unwrap();
       message.success('Report uploaded successfully.');
-      navigate(`/dashboard/${result.id}/action-center`);
+      // navigate(`/dashboard/${result.id}/action-center`);
+      navigate('/reports');
     } catch {
       // For demo purposes, navigate anyway with a mock ID
-      navigate('/dashboard/demo-report-1');
+      // navigate('/dashboard/demo-report-1');
+      navigate('/reports');
     }
   };
 
@@ -196,7 +198,8 @@ function UploadData() {
         });
 
         message.success('Analysis created successfully.');
-        navigate(`/dashboard/${response.data.id}/action-center`);
+        // navigate(`/dashboard/${response.data.id}/action-center`);
+        navigate('/reports');
       } catch {
         message.error('Something went wrong!', 10);
       } finally {
@@ -464,11 +467,11 @@ function UploadData() {
         />
 
         {selectedFile ? (
-          <FlexLayout flexDirection="column" alignItems="center" itemSpacing="16px">
+          <FlexLayout flexDirection="column" alignItems="center" itemSpacing="10px">
             <div className={styles.fileIconWrapper}>
               <ReportIcon />
             </div>
-            <FlexLayout flexDirection="column" alignItems="center" itemSpacing="4px">
+            <FlexLayout flexDirection="column" alignItems="center" itemSpacing="5px">
               <TextLabel type={TextLabel.TEXT_LABEL_TYPE.PRIMARY} style={{ fontWeight: 600 }}>
                 {selectedFile.name}
               </TextLabel>
