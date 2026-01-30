@@ -266,25 +266,26 @@ const normalizeCaseDetails = (doc) => {
 
   // Get suggested tag from validation summary
   const suggestedTag = 
-    tagValidationSummary.tagsNeedingReplacement?.[0]?.suggestedReplacement ||
-    tagValidationSummary.tagsWithImprovements?.[0]?.suggestedImprovement ||
+    tagValidationSummary.missingTags?.[0]?.suggestedTag ||
+    tagValidationSummary.inaccurateTags?.[0]?.tag ||
     null;
 
   const tagReason = 
-    tagValidationSummary.tagsNeedingReplacement?.[0]?.reasoning ||
+    tagValidationSummary.missingTags?.[0]?.reasoning ||
+    tagValidationSummary.inaccurateTags?.[0]?.reasoning ||
     tagValidationSummary.overallAssessment?.summary ||
     (doc.isClosedTagValid === false ? 'Wrong tag: Generic tag used instead of specific category' : null);
 
   // Build issues array from validation data
   const issues = [];
-  if (tagValidationSummary.tagsNeedingReplacement?.length > 0) {
-    issues.push(...tagValidationSummary.tagsNeedingReplacement.map(t => 
-      `Replace tag: ${t.tag} → ${t.suggestedReplacement}`
+  if (tagValidationSummary.inaccurateTags?.length > 0) {
+    issues.push(...tagValidationSummary.inaccurateTags.map(t => 
+      `Replace tag: ${t.tag} → ${t.suggestedTag}`
     ));
   }
-  if (tagValidationSummary.tagsWithImprovements?.length > 0) {
-    issues.push(...tagValidationSummary.tagsWithImprovements.map(t => 
-      `Improve tag: ${t.tag} → ${t.suggestedImprovement}`
+  if (tagValidationSummary.missingTags?.length > 0) {
+    issues.push(...tagValidationSummary.missingTags.map(t => 
+      `Missing tag: ${t.suggestedTag}`
     ));
   }
   if (doc.kb?.valid === false) issues.push('Outdated KB article');
@@ -357,7 +358,7 @@ const normalizeCaseDetails = (doc) => {
     },
     kbArticle: {
       value: kbValue,
-      status: normalizeValidationStatus(doc.kb?.valid),
+      status: normalizeValidationStatus(doc.kb?.valid || !doc.kb?.missing),
       suggestedValue: null,
       reason: kbValue
         ? (doc.isKBValid === false ? 'Outdated: KB does not apply to current version' : 'Valid KB article attached')
@@ -365,7 +366,7 @@ const normalizeCaseDetails = (doc) => {
     },
     jiraTicket: {
       value: jiraValue,
-      status: normalizeValidationStatus(doc.jira?.valid),
+      status: normalizeValidationStatus(doc.jira?.valid || !doc.jira?.missing),
       suggestedValue: null,
       reason: jiraValue
         ? (doc.isJIRAValid === false ? 'JIRA ticket validation issue' : 'Valid JIRA ticket attached')
