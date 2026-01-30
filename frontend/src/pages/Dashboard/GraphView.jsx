@@ -219,7 +219,7 @@ const getColorForClosedTag = (index) => {
 };
 
 const convertBucketData = (bucketData) => {
-  return bucketData.slice(0, 5).map((bucketObj) => ({
+  return bucketData.sort((a, b) => b.count - a.count).slice(0, 5).map((bucketObj) => ({
     name: bucketObj.name,
     value: bucketObj.count,
     fill: getColorBasedOnBucketName(bucketObj.name),
@@ -227,7 +227,7 @@ const convertBucketData = (bucketData) => {
 };
 
 const convertClosedTagsData = (closedTagsData) => {
-  return closedTagsData.slice(0, 5).map((closedTagObj, index) => ({
+  return closedTagsData.sort((a, b) => b.count - a.count).slice(0, 5).map((closedTagObj, index) => ({
     name: closedTagObj.name,
     value: closedTagObj.count,
     fill: getColorForClosedTag(index),
