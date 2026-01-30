@@ -10,7 +10,7 @@ const reportSchema = new mongoose.Schema(
     },
     fileName: {
       type: String,
-      required: [true, 'File name is required'],
+      required: [false, 'File name is required'],
       trim: true,
     },
     fileSize: {
@@ -20,7 +20,7 @@ const reportSchema = new mongoose.Schema(
     fileType: {
       type: String,
       enum: ['csv', 'xlsx', 'xls', 'json'],
-      required: true,
+      required: false,
     },
     status: {
       type: String,
