@@ -4,6 +4,8 @@ export const reportsApi = {
   getAll: () => api.get('/reports'),
   
   getById: (reportId) => api.get(`/reports/${reportId}`),
+
+  getByReportId: (reportId) => api.get(`/reports/by-report-id/${reportId}`),
   
   upload: (file) => {
     const formData = new FormData();

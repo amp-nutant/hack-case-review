@@ -9,6 +9,9 @@ router.get('/', reportsController.getAll);
 // GET /api/reports/:id/cases - Get cases for a report from case-details
 router.get('/:id/cases', reportsController.getCasesFromDetails);
 
+// GET /api/reports/by-report-id/:reportId - Get report by reportId field
+router.get('/by-report-id/:reportId', reportsController.getByReportId);
+
 // GET /api/reports/:id - Get a single report
 router.get('/:id', reportsController.getById);
 

@@ -51,6 +51,28 @@ export const getById = async (req, res, next) => {
 };
 
 /**
+ * Get a single report by reportId field
+ */
+export const getByReportId = async (req, res, next) => {
+  try {
+    const { reportId } = req.params;
+
+    const report = await Report.findOne({ reportId });
+
+    if (!report) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Report not found',
+      });
+    }
+
+    res.json(report);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Delete a report
  */
 export const deleteReport = async (req, res, next) => {
@@ -204,6 +226,7 @@ export const getCasesFromDetails = async (req, res, next) => {
 export default {
   getAll,
   getById,
+  getByReportId,
   delete: deleteReport,
   getSummary,
   getCasesFromDetails,
