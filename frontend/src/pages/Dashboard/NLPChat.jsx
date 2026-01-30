@@ -4,7 +4,7 @@ import {
   Title,
   TextLabel,
   StackingLayout,
-  UploadIcon,
+  ChevronCutoutRightIcon,
   PlusCircleIcon,
   RemoveIcon,
   CloudIcon
@@ -553,7 +553,7 @@ function NLPChat() {
                 disabled={!inputValue.trim() || isLoading}
                 aria-label="Send message"
               >
-                <UploadIcon />
+                <ChevronCutoutRightIcon />
               </button>
             </div>
           </div>

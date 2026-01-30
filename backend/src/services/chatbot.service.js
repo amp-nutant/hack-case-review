@@ -456,9 +456,9 @@ ${cd?.jira ? JSON.stringify(cd.jira, null, 2).substring(0, 400) : 'No JIRA detai
 **Top Issue Categories (by LLM-generated cluster names):**
 ${topClusters.map((c, i) => {
   const name = c.generated_name || c.representative_title || 'Unnamed';
-  const confidence = c.name_confidence ? ` (${(c.name_confidence * 100).toFixed(0)}% confidence)` : '';
+  // const confidence = c.name_confidence ? ` (${(c.name_confidence * 100).toFixed(0)}% confidence)` : '';
   const keywords = c.theme_keywords?.slice(0, 5).join(', ') || '';
-  return `${i+1}. **${name}**${confidence} - ${c.size} cases
+  return `${i+1}. **${name}** - ${c.size} cases
    - Keywords: ${keywords || 'N/A'}`;
 }).join('\n')}
 
