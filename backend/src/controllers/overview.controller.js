@@ -58,12 +58,13 @@ export const getOverview = async (req, res, next) => {
         const jiraKeysInCase = new Set();
         jiraDetails.forEach((jiraItem) => {
           const status = jiraItem?.status;
-          if (status && status !== 'Resolved' && status !== 'Closed') {
+          const isOpen = !status || (status !== 'Resolved' && status !== 'Closed');
+          if (isOpen) {
             jiraOpenTotal += 1;
           }
 
           const key = jiraItem?.key || jiraItem?.id || jiraItem?.jiraKey;
-          if (key) {
+          if (key && isOpen) {
             jiraKeysInCase.add(key);
             const summary =
               jiraItem?.summary || jiraItem?.title || jiraItem?.description || '';
@@ -92,30 +93,30 @@ export const getOverview = async (req, res, next) => {
       if (Array.isArray(kbDetails)) {
         const kbKeysInCase = new Set();
         kbDetails.forEach((kbItem) => {
-          const title =
-            kbItem?.title ||
-            kbItem?.articleTitle ||
-            kbItem?.subject ||
+          const articleNumber =
             kbItem?.articleNumber ||
+            kbItem?.article_number ||
+            kbItem?.articleId ||
             kbItem?.id;
+          const title = kbItem?.title || kbItem?.articleTitle || kbItem?.subject || '';
 
-          if (title) {
-            const key = truncateLabel(String(title), 60);
-            kbKeysInCase.add(key);
-            const label = key;
-            const existing = kbJiraCounts.get(`KB:${key}`) || {
-              id: key,
+          if (articleNumber) {
+            const id = String(articleNumber);
+            kbKeysInCase.add(id);
+            const label = title ? `KB-${id}: ${truncateLabel(String(title), 50)}` : `KB-${id}`;
+            const existing = kbJiraCounts.get(`KB:${id}`) || {
+              id,
               type: 'KB',
               label,
               count: 0,
             };
             existing.label = label || existing.label;
-            kbJiraCounts.set(`KB:${key}`, existing);
+            kbJiraCounts.set(`KB:${id}`, existing);
           }
         });
 
-        kbKeysInCase.forEach((key) => {
-          const entry = kbJiraCounts.get(`KB:${key}`);
+        kbKeysInCase.forEach((id) => {
+          const entry = kbJiraCounts.get(`KB:${id}`);
           if (entry) {
             entry.count += 1;
           }
@@ -160,6 +161,7 @@ export const getOverview = async (req, res, next) => {
           affectedCases: actionItem.cases ?? 0,
         }))
       : [];
+
     const topKBGaps = Array.from(kbJiraCounts.values())
       .map((entry) => ({
         id: entry.id,
