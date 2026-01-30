@@ -11,7 +11,8 @@
     "analyze": "node analyze.js",
     "extract-tags": "node extractTags.js",
     "fetch-case": "node src/scripts/fetchCase.js",
-    "list-cases": "node src/scripts/fetchCase.js --list"
+    "list-cases": "node src/scripts/fetchCase.js --list",
+    "import-data": "node src/scripts/importData.js"
   },
   "dependencies": {
     "axios": "^1.7.9",

@@ -11,93 +11,254 @@ import {
 } from '@nutanix-ui/prism-reactjs';
 import styles from './NLPChat.module.css';
 
-// Simple markdown renderer component
+// Enhanced markdown renderer component
 const FormattedMessage = ({ content }) => {
-  const formatText = (text) => {
-    // Split by double newlines for paragraphs
-    const paragraphs = text.split('\n\n');
+  // Process inline formatting (bold, italic, code, links)
+  const processInline = (text) => {
+    if (!text) return text;
     
-    return paragraphs.map((paragraph, pIndex) => {
-      // Check if it's a header (## )
-      if (paragraph.startsWith('## ')) {
-        return (
-          <h3 key={pIndex} className={styles.messageH3}>
-            {paragraph.substring(3)}
-          </h3>
-        );
-      }
-      
-      // Process lines within paragraph
-      const lines = paragraph.split('\n');
-      const processedLines = lines.map((line, lIndex) => {
-        // Check for list items (• or - or numbered)
-        const isBullet = line.startsWith('• ') || line.startsWith('- ');
-        const isNumbered = /^\d+\.\s/.test(line);
-        const isIndented = line.startsWith('   ');
+    // Split by various inline patterns
+    const patterns = [
+      // Code (must come first to prevent other formatting inside code)
+      { regex: /(`[^`]+`)/g, render: (match, i) => (
+        <code key={`code-${i}`} className={styles.inlineCode}>{match.slice(1, -1)}</code>
+      )},
+      // Bold
+      { regex: /(\*\*[^*]+\*\*)/g, render: (match, i) => (
+        <strong key={`bold-${i}`}>{match.slice(2, -2)}</strong>
+      )},
+      // Italic
+      { regex: /(\*[^*]+\*)/g, render: (match, i) => (
+        <em key={`italic-${i}`}>{match.slice(1, -1)}</em>
+      )},
+    ];
+    
+    let result = [text];
+    
+    patterns.forEach(({ regex, render }) => {
+      result = result.flatMap((part, partIndex) => {
+        if (typeof part !== 'string') return [part];
         
-        // Process inline formatting (bold **)
-        const processInline = (text) => {
-          const parts = text.split(/(\*\*[^*]+\*\*)/g);
-          return parts.map((part, i) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={i}>{part.slice(2, -2)}</strong>;
-            }
-            return part;
-          });
-        };
-        
-        if (isBullet) {
-          return (
-            <div key={lIndex} className={styles.bulletItem}>
-              <span className={styles.bullet}>•</span>
-              <span>{processInline(line.substring(2))}</span>
-            </div>
-          );
-        }
-        
-        if (isNumbered) {
-          const match = line.match(/^(\d+\.)\s(.*)$/);
-          return (
-            <div key={lIndex} className={styles.numberedItem}>
-              <span className={styles.number}>{match[1]}</span>
-              <span>{processInline(match[2])}</span>
-            </div>
-          );
-        }
-        
-        if (isIndented) {
-          return (
-            <div key={lIndex} className={styles.indentedLine}>
-              {processInline(line.trim())}
-            </div>
-          );
-        }
-        
-        return (
-          <div key={lIndex}>
-            {processInline(line)}
-          </div>
-        );
+        const matches = part.split(regex);
+        return matches.map((segment, i) => {
+          if (regex.test(segment)) {
+            return render(segment, `${partIndex}-${i}`);
+          }
+          return segment;
+        }).filter(s => s !== '');
       });
-      
+    });
+    
+    return result;
+  };
+
+  // Parse code block
+  const parseCodeBlock = (text) => {
+    const lines = text.split('\n');
+    const firstLine = lines[0].replace('```', '').trim();
+    const language = firstLine || 'text';
+    const code = lines.slice(1, -1).join('\n');
+    return { language, code };
+  };
+
+  // Process a single line
+  const processLine = (line, index) => {
+    // Headers
+    if (line.startsWith('#### ')) {
+      return <h5 key={index} className={styles.messageH5}>{processInline(line.substring(5))}</h5>;
+    }
+    if (line.startsWith('### ')) {
+      return <h4 key={index} className={styles.messageH4}>{processInline(line.substring(4))}</h4>;
+    }
+    if (line.startsWith('## ')) {
+      return <h3 key={index} className={styles.messageH3}>{processInline(line.substring(3))}</h3>;
+    }
+    if (line.startsWith('# ')) {
+      return <h2 key={index} className={styles.messageH2}>{processInline(line.substring(2))}</h2>;
+    }
+    
+    // Horizontal rule
+    if (line.match(/^(-{3,}|_{3,}|\*{3,})$/)) {
+      return <hr key={index} className={styles.horizontalRule} />;
+    }
+    
+    // Checkboxes
+    if (line.startsWith('- [ ] ')) {
       return (
-        <div key={pIndex} className={styles.messageParagraph}>
-          {processedLines}
+        <div key={index} className={styles.checkboxItem}>
+          <span className={styles.checkbox}>☐</span>
+          <span>{processInline(line.substring(6))}</span>
         </div>
       );
-    });
+    }
+    if (line.startsWith('- [x] ') || line.startsWith('- [X] ')) {
+      return (
+        <div key={index} className={styles.checkboxItem}>
+          <span className={styles.checkboxChecked}>☑</span>
+          <span>{processInline(line.substring(6))}</span>
+        </div>
+      );
+    }
+    
+    // Bullet points (-, *, •)
+    if (line.match(/^[-*•]\s/)) {
+      const content = line.substring(2);
+      // Check for nested bullet
+      const isNested = content.startsWith('  ');
+      return (
+        <div key={index} className={isNested ? styles.nestedBulletItem : styles.bulletItem}>
+          <span className={styles.bullet}>•</span>
+          <span>{processInline(isNested ? content.trim() : content)}</span>
+        </div>
+      );
+    }
+    
+    // Numbered lists
+    const numberedMatch = line.match(/^(\d+\.)\s(.*)$/);
+    if (numberedMatch) {
+      return (
+        <div key={index} className={styles.numberedItem}>
+          <span className={styles.number}>{numberedMatch[1]}</span>
+          <span>{processInline(numberedMatch[2])}</span>
+        </div>
+      );
+    }
+    
+    // Indented lines (sub-items)
+    if (line.startsWith('   ') || line.startsWith('\t')) {
+      return (
+        <div key={index} className={styles.indentedLine}>
+          {processInline(line.trim())}
+        </div>
+      );
+    }
+    
+    // Status indicators (checkmarks and X marks)
+    let processedLine = line;
+    if (processedLine.includes('✓') || processedLine.includes('✗')) {
+      const parts = processedLine.split(/(✓|✗)/g);
+      return (
+        <div key={index} className={styles.statusLine}>
+          {parts.map((part, i) => {
+            if (part === '✓') return <span key={i} className={styles.checkmark}>✓</span>;
+            if (part === '✗') return <span key={i} className={styles.crossmark}>✗</span>;
+            return <span key={i}>{processInline(part)}</span>;
+          })}
+        </div>
+      );
+    }
+    
+    // Regular line
+    if (line.trim() === '') {
+      return <div key={index} className={styles.emptyLine} />;
+    }
+    
+    return <div key={index}>{processInline(line)}</div>;
+  };
+
+  const formatText = (text) => {
+    if (!text) return null;
+    
+    const elements = [];
+    const lines = text.split('\n');
+    let i = 0;
+    
+    while (i < lines.length) {
+      const line = lines[i];
+      
+      // Check for code block start
+      if (line.startsWith('```')) {
+        // Find code block end
+        let codeBlockEnd = i + 1;
+        while (codeBlockEnd < lines.length && !lines[codeBlockEnd].startsWith('```')) {
+          codeBlockEnd++;
+        }
+        
+        const codeLines = lines.slice(i, codeBlockEnd + 1);
+        const { language, code } = parseCodeBlock(codeLines.join('\n'));
+        
+        elements.push(
+          <div key={`code-block-${i}`} className={styles.codeBlock}>
+            <div className={styles.codeHeader}>
+              <span className={styles.codeLanguage}>{language}</span>
+              <button 
+                className={styles.copyButton}
+                onClick={() => navigator.clipboard.writeText(code)}
+                title="Copy code"
+              >
+                📋
+              </button>
+            </div>
+            <pre className={styles.codeContent}>
+              <code>{code}</code>
+            </pre>
+          </div>
+        );
+        
+        i = codeBlockEnd + 1;
+        continue;
+      }
+      
+      // Check for table (lines starting with |)
+      if (line.startsWith('|')) {
+        const tableLines = [];
+        let j = i;
+        while (j < lines.length && lines[j].startsWith('|')) {
+          tableLines.push(lines[j]);
+          j++;
+        }
+        
+        if (tableLines.length >= 2) {
+          const rows = tableLines
+            .filter(l => !l.match(/^\|[\s\-:]+\|$/)) // Filter out separator rows
+            .map(l => l.split('|').filter(cell => cell.trim() !== ''));
+          
+          elements.push(
+            <div key={`table-${i}`} className={styles.tableWrapper}>
+              <table className={styles.markdownTable}>
+                <thead>
+                  <tr>
+                    {rows[0]?.map((cell, ci) => (
+                      <th key={ci}>{processInline(cell.trim())}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice(1).map((row, ri) => (
+                    <tr key={ri}>
+                      {row.map((cell, ci) => (
+                        <td key={ci}>{processInline(cell.trim())}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+          
+          i = j;
+          continue;
+        }
+      }
+      
+      // Regular line processing
+      elements.push(processLine(line, i));
+      i++;
+    }
+    
+    return elements;
   };
   
   return <div className={styles.formattedContent}>{formatText(content)}</div>;
 };
 
 const suggestedQuestions = [
-  'What are the most common issues in this report?',
-  'Show me cases with critical priority',
-  'What patterns do you see in the data?',
-  'Summarize the key findings',
-  'Which cases should I prioritize?',
-  'Are there any recurring problems?',
+  'What are the top issue categories?',
+  'Show me critical priority cases',
+  // 'Give me a summary of all cases',
+  'Show cases with validation issues',
+  // 'What are the Prism Central issues?',
+  'Tell me about case #02106340',
 ];
 
 // Mock AI responses based on question keywords
@@ -165,16 +326,59 @@ function NLPChat() {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate AI thinking delay
-    setTimeout(() => {
+    try {
+      // Call the real API with AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+      
+      const response = await fetch('/api/llm/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: userMessage.content,
+          history: messages.slice(-10), // Send last 10 messages for context
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
       const aiResponse = {
         role: 'assistant',
-        content: getMockResponse(userMessage.content),
+        content: data.content || 'Sorry, I could not process your request.',
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      
+      let errorMessage = 'Sorry, there was an error processing your request. ';
+      if (error.name === 'AbortError') {
+        errorMessage += 'The request timed out. Please try again.';
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        // Fallback to mock response if API fails
+        errorMessage = getMockResponse(userMessage.content);
+      }
+      
+      const aiResponse = {
+        role: 'assistant',
+        content: errorMessage,
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, aiResponse]);
+    } finally {
       setIsLoading(false);
-    }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
+    }
   };
 
   const handleKeyPress = (e) => {
