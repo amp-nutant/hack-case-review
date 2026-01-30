@@ -278,7 +278,7 @@ const suggestedQuestions = [
   'What are the top issue categories?',
   'Show me critical priority cases',
   // 'Give me a summary of all cases',
-  'Show cases with validation issues',
+  'Show cases with Incorrect Closed Tags',
   // 'What are the Prism Central issues?',
   'Tell me about case #02106340',
 ];
