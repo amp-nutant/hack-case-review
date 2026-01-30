@@ -48,12 +48,64 @@ function ActionCenter() {
           if (!priority) return 'pending_review';
           const normalized = String(priority).toLowerCase();
           if (normalized === 'high') return 'pending_review';
-          if (normalized === 'medium') return 'draft_ready';
-          if (normalized === 'low') return 'in_progress';
+          if (normalized === 'medium') return 'completed';
+          if (normalized === 'low') return 'rejected';
           return 'pending_review';
         };
 
-        const actions = Object.entries(actionSummary)
+        const getActionButtonLabel = ({ actionType, category, title, actionLabel, action }) => {
+          const rawType = actionType || category || title || '';
+          const normalized = String(rawType).toLowerCase();
+          const normalizedTitle = String(title || '').toLowerCase();
+
+          if (normalizedTitle.includes('incorrect closure tags')) {
+            return 'Edit Close Tags';
+          }
+
+          if (normalizedTitle.includes('kb articles missing or not linked')) {
+            return 'Create SR Ticket';
+          }
+
+          if (normalizedTitle.includes('open jiras to prioritize for fix')) {
+            return 'Create JIRA';
+          }
+
+          if (normalizedTitle.includes('recommended kb articles to create')) {
+            return 'Create SR Ticket';
+          }
+
+          if (normalizedTitle.includes('fixed jiras') && normalizedTitle.includes('version update')) {
+            return 'Comment on Case';
+          }
+
+          if (normalizedTitle.includes('bugs/improvements without jira')) {
+            return 'Create JIRA';
+          }
+
+          if (normalized.includes('wrong') && normalized.includes('close')) {
+            return 'Edit Close Tags';
+          }
+
+          if (normalized.includes('kb')) {
+            return 'Create SR Ticket';
+          }
+
+          if (normalized.includes('jira')) {
+            return 'Comment on Case';
+          }
+
+          if (normalized.includes('issue') || normalized.includes('bug')) {
+            return 'Create JIRA';
+          }
+
+          const fallbackLabel = actionLabel || action || category || title;
+          if (!fallbackLabel || typeof fallbackLabel !== 'string') return 'Take Action';
+          const cleaned = fallbackLabel.replace(/[_-]+/g, ' ').trim();
+          if (!cleaned) return 'Take Action';
+          return cleaned.replace(/\b\w/g, (char) => char.toUpperCase());
+        };
+
+        let actions = Object.entries(actionSummary)
           .filter(([key, value]) => key !== 'topPriorityActions' && value && typeof value === 'object')
           .map(([, value], index) => {
             const casesAffected =
@@ -73,9 +125,16 @@ function ActionCenter() {
               description: value.actionRequired || value.summary?.actionRequired || '',
               patternMatch: getRandomPatternMatch(),
               version: getRandomVersion(index),
-              primaryActionLabel: 'See Details',
+              primaryActionLabel: getActionButtonLabel({
+                actionType: value.actionType,
+                category: value.category,
+                title: value.title,
+                actionLabel: value.actionLabel,
+                action: value.action,
+              }),
             };
           });
+        actions = actions.filter((action) => action.casesAffected > 0);
 
         setActionsData((prev) => ({
           ...prev,
@@ -97,9 +156,20 @@ function ActionCenter() {
   const data = actionsData;
 
   // Filter states
-  const [selectedActionType, setSelectedActionType] = useState({ key: 'all', label: 'All Action Types' });
-  const [selectedComponent, setSelectedComponent] = useState({ key: 'all', label: 'All Components' });
+  const [selectedActionType, setSelectedActionType] = useState({ key: 'all', label: 'All Actions' });
   const [selectedCriticality, setSelectedCriticality] = useState('all');
+
+  const actionLabelOptions = useMemo(() => {
+    const labels = Array.from(
+      new Set(
+        data.actions
+          .map((action) => action.primaryActionLabel)
+          .filter((label) => typeof label === 'string' && label.trim().length > 0),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+
+    return [{ key: 'all', label: 'All Actions' }, ...labels.map((label) => ({ key: label, label }))];
+  }, [data.actions]);
 
   // Filter and rank the actions based on all criteria
   const filteredActions = useMemo(() => {
@@ -115,12 +185,7 @@ function ActionCenter() {
     // Now filter
     return rankedActions.filter((action) => {
       // Action type filter
-      if (selectedActionType.key !== 'all' && action.actionType !== selectedActionType.key) {
-        return false;
-      }
-
-      // Component filter
-      if (selectedComponent.key !== 'all' && action.component !== selectedComponent.key) {
+      if (selectedActionType.key !== 'all' && action.primaryActionLabel !== selectedActionType.key) {
         return false;
       }
 
@@ -135,7 +200,7 @@ function ActionCenter() {
 
       return true;
     });
-  }, [selectedActionType, selectedComponent, selectedCriticality, data.actions, data.criticalities]);
+  }, [selectedActionType, selectedCriticality, data.actions, data.criticalities]);
 
   // Calculate summary based on filtered actions
   const filteredSummary = useMemo(() => {
@@ -155,10 +220,6 @@ function ActionCenter() {
     console.log('Primary action clicked:', action.title);
   };
 
-  const handleSeeDetails = (action) => {
-    console.log('See details clicked:', action.title);
-  };
-
   const handleThumbsUp = (action) => {
     console.log('Thumbs up:', action.title);
   };
@@ -168,14 +229,11 @@ function ActionCenter() {
   };
 
   const clearFilters = () => {
-    setSelectedActionType({ key: 'all', label: 'All Action Types' });
-    setSelectedComponent({ key: 'all', label: 'All Components' });
+    setSelectedActionType({ key: 'all', label: 'All Actions' });
     setSelectedCriticality('all');
   };
 
-  const hasActiveFilters = selectedActionType.key !== 'all' || 
-                           selectedComponent.key !== 'all' || 
-                           selectedCriticality !== 'all';
+  const hasActiveFilters = selectedActionType.key !== 'all' || selectedCriticality !== 'all';
 
   if (actionsLoading) {
     return (
@@ -228,19 +286,13 @@ function ActionCenter() {
           ))}
         </FlexLayout>
 
-        {/* Dropdown Filters */}
+        {/* Dropdown Filter */}
         <FlexLayout itemGap="S" alignItems="center">
           <Select
-            rowsData={data.actionTypes.map((item, idx) => ({ ...item, key: idx }))}
+            rowsData={actionLabelOptions}
             selectedRow={selectedActionType}
             onSelectedChange={(row) => setSelectedActionType(row)}
-            style={{ minWidth: '180px' }}
-          />
-          <Select
-            rowsData={data.components.map((item, idx) => ({ ...item, key: idx }))}
-            selectedRow={selectedComponent}
-            onSelectedChange={(row) => setSelectedComponent(row)}
-            style={{ minWidth: '180px' }}
+            style={{ minWidth: '200px' }}
           />
         </FlexLayout>
       </FlexLayout>
@@ -285,7 +337,6 @@ function ActionCenter() {
               version={action.version}
               primaryActionLabel={action.primaryActionLabel}
               onPrimaryAction={() => handlePrimaryAction(action)}
-              onSeeDetails={() => handleSeeDetails(action)}
               onThumbsUp={() => handleThumbsUp(action)}
               onThumbsDown={() => handleThumbsDown(action)}
             />

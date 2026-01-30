@@ -5,9 +5,6 @@ import {
   Badge,
   Button,
   OpenFolderIcon,
-  LayersIcon,
-  UpdateIcon,
-  ChevronDownIcon,
   ReportIcon,
   RefreshIcon,
   ShareArrowIcon,
@@ -27,11 +24,8 @@ import './ActionCard.css';
  * @param {string} title - Action title
  * @param {string} description - Action description
  * @param {number} casesAffected - Number of cases affected
- * @param {number} patternMatch - Pattern match percentage
- * @param {string} version - Version info
  * @param {string} primaryActionLabel - Primary button label
  * @param {function} onPrimaryAction - Primary button click handler
- * @param {function} onSeeDetails - See Details click handler
  * @param {function} onThumbsUp - Thumbs up click handler
  * @param {function} onThumbsDown - Thumbs down click handler
  */
@@ -43,11 +37,8 @@ function ActionCard({
   title,
   description,
   casesAffected,
-  patternMatch,
-  version,
   primaryActionLabel,
   onPrimaryAction,
-  onSeeDetails,
   onThumbsUp,
   onThumbsDown,
 }) {
@@ -62,9 +53,9 @@ function ActionCard({
 
   // Status config
   const statusConfig = {
-    draft_ready: { label: 'Draft ready', color: 'green' },
-    pending_review: { label: 'Pending review', color: 'blue' },
-    in_progress: { label: 'In progress', color: 'blue' },
+    pending_review: { label: 'Pending', color: 'blue' },
+    completed: { label: 'Completed', color: 'green' },
+    rejected: { label: 'Rejected', color: 'red' },
   };
 
   // Softer colors based on rank (1-2 = coral, 3-4 = orange, 5-8 = amber, 9+ = teal)
@@ -75,9 +66,26 @@ function ActionCard({
     return '#34a88f'; // teal
   };
 
-  const actionConfig = actionTypeConfig[actionType] || { label: actionType?.toUpperCase(), color: 'gray', icon: ReportIcon };
+  const formatActionTypeLabel = (value) => {
+    if (!value || typeof value !== 'string') return 'OTHER';
+    const cleaned = value.replace(/[_-]+/g, ' ').trim();
+    if (!cleaned) return 'OTHER';
+    const titleCased = cleaned.replace(/\b\w/g, (char) => char.toUpperCase());
+    return titleCased.replace(/\bKb\b/g, 'KB');
+  };
+
+  const actionConfig = actionTypeConfig[actionType] || {
+    label: formatActionTypeLabel(actionType),
+    color: 'gray',
+    icon: ReportIcon,
+  };
   const ActionIcon = actionConfig.icon;
-  const statusInfo = statusConfig[status] || { label: status, color: 'gray' };
+  const statusInfo = statusConfig[status] || statusConfig.pending_review;
+  const normalizedActionLabel = formatActionTypeLabel(actionConfig.label).toLowerCase();
+  const formattedComponentLabel = formatActionTypeLabel(component);
+  const normalizedComponent = formattedComponentLabel.toLowerCase();
+  const shouldShowComponentBadge =
+    normalizedComponent && normalizedComponent !== normalizedActionLabel;
 
   return (
     <FlexLayout
@@ -101,10 +109,20 @@ function ActionCard({
         {/* Top Row - Badges */}
         <FlexLayout alignItems="center" itemGap="S">
           <Badge color={actionConfig.color} count={actionConfig.label} />
-          <Badge color="gray" count={component} />
+          {shouldShowComponentBadge && <Badge color="gray" count={formattedComponentLabel} />}
           <FlexLayout alignItems="center" itemGap="XS">
             <Badge color={statusInfo.color} label={statusInfo.label} />
-            <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY} style={{ color: statusInfo.color === 'green' ? '#22c55e' : '#3b82f6' }}>
+            <TextLabel
+              type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}
+              style={{
+                color:
+                  statusInfo.color === 'green'
+                    ? '#22c55e'
+                    : statusInfo.color === 'red'
+                      ? '#ef4444'
+                      : '#3b82f6',
+              }}
+            >
               {statusInfo.label}
             </TextLabel>
           </FlexLayout>
@@ -124,14 +142,6 @@ function ActionCard({
             <OpenFolderIcon size="small" />
             <span>{casesAffected} cases affected</span>
           </FlexLayout>
-          <FlexLayout alignItems="center" itemGap="XS">
-            <LayersIcon size="small" />
-            <span>Similarity: {patternMatch}%</span>
-          </FlexLayout>
-          <FlexLayout alignItems="center" itemGap="XS">
-            <span>Version:</span>
-            <Badge color="gray" count={version} />
-          </FlexLayout>
         </FlexLayout>
       </FlexLayout>
 
@@ -139,9 +149,6 @@ function ActionCard({
       <FlexLayout flexDirection="column" alignItems="flex-end" itemGap="S">
         <Button type={Button.ButtonTypes.PRIMARY} onClick={onPrimaryAction}>
           <ActionIcon size="small" /> {primaryActionLabel}
-        </Button>
-        <Button type={Button.ButtonTypes.SECONDARY} onClick={onSeeDetails}>
-          See Details <ChevronDownIcon size="small" />
         </Button>
         <FlexLayout itemGap="S">
           <Button type={Button.ButtonTypes.BORDERLESS} onClick={onThumbsUp}>
