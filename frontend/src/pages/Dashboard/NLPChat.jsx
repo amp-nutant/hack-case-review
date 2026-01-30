@@ -13,8 +13,30 @@ import styles from './NLPChat.module.css';
 
 // Enhanced markdown renderer component
 const FormattedMessage = ({ content }) => {
-  // Process inline formatting (bold, italic, code, links)
+  // Process inline formatting (bold, italic, code, links, line breaks)
   const processInline = (text) => {
+    if (!text) return text;
+    
+    // First, handle <br> tags by converting to actual line breaks
+    // Replace all variations of <br> tags with a placeholder, then split
+    const brPattern = /<br\s*\/?>/gi;
+    if (typeof text === 'string' && brPattern.test(text)) {
+      const parts = text.split(brPattern);
+      return parts.flatMap((part, idx) => {
+        const processed = processInlinePatterns(part);
+        if (idx < parts.length - 1) {
+          // Add line break after each part except the last
+          return [...(Array.isArray(processed) ? processed : [processed]), <br key={`br-${idx}`} />];
+        }
+        return Array.isArray(processed) ? processed : [processed];
+      });
+    }
+    
+    return processInlinePatterns(text);
+  };
+  
+  // Helper function for inline pattern processing
+  const processInlinePatterns = (text) => {
     if (!text) return text;
     
     // Split by various inline patterns

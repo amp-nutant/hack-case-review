@@ -8,7 +8,9 @@ const QUERY_PATTERNS = {
   CASE_COUNT: /(how many|count|total)\s*(cases?)?/i,
   CLUSTER_INFO: /(cluster|group|category|bucket|categories)/i,
   PRIORITY: /(critical|p1|p2|high priority|urgent)/i,
+  PRIORITY_DISTRIBUTION: /(priority|priorities)\s*(breakdown|distribution|split|by|stats|statistics|report)|(breakdown|distribution|split|stats)\s*(by\s*)?(priority|priorities)/i,
   PRODUCT: /(prism central|prism|lcm|aos|ahv|life cycle|acropolis)/i,
+  PRODUCT_DISTRIBUTION: /(product|products)\s*(breakdown|distribution|split|by|stats)|(breakdown|distribution|split)\s*(by\s*)?(product|products)/i,
   SUMMARY: /(summary|overview|summarize|give me|show me all)/i,
   TOP_ISSUES: /(top|common|frequent|most|major)\s*(issues?|problems?|errors?)/i,
   RESOLUTION: /(resolution|resolved|fix|solved|how was)/i,
@@ -119,7 +121,56 @@ async function buildContext(query) {
       return context;
     }
     
-    // Check for priority-based queries
+    // Check for priority distribution queries (BEFORE specific priority case queries)
+    if (QUERY_PATTERNS.PRIORITY_DISTRIBUTION.test(queryLower)) {
+      const clusterData = await ClusteredCases.findOne({}).lean();
+      const caseCount = await CaseDetails.countDocuments();
+      
+      // Also get priority breakdown from case-details for accuracy
+      const priorityAgg = await CaseDetails.aggregate([
+        { $group: { _id: '$caseInfo.priority', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]);
+      
+      context.type = 'priority_distribution';
+      context.data = {
+        totalCases: caseCount,
+        priorityFromCluster: clusterData?.distributions?.by_priority || [],
+        priorityFromCases: priorityAgg.map(p => ({
+          priority: p._id || 'Unknown',
+          count: p.count,
+          percentage: ((p.count / caseCount) * 100).toFixed(1)
+        })),
+        distributions: clusterData?.distributions
+      };
+      return context;
+    }
+    
+    // Check for product distribution queries
+    if (QUERY_PATTERNS.PRODUCT_DISTRIBUTION.test(queryLower)) {
+      const clusterData = await ClusteredCases.findOne({}).lean();
+      const caseCount = await CaseDetails.countDocuments();
+      
+      // Also get product breakdown from case-details
+      const productAgg = await CaseDetails.aggregate([
+        { $group: { _id: '$caseInfo.product', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]);
+      
+      context.type = 'product_distribution';
+      context.data = {
+        totalCases: caseCount,
+        productFromCluster: clusterData?.distributions?.by_product || [],
+        productFromCases: productAgg.map(p => ({
+          product: p._id || 'Unknown',
+          count: p.count,
+          percentage: ((p.count / caseCount) * 100).toFixed(1)
+        }))
+      };
+      return context;
+    }
+    
+    // Check for priority-based queries (specific P1/P2 cases)
     if (QUERY_PATTERNS.PRIORITY.test(queryLower)) {
       const cases = await CaseDetails.find({
         $or: [
@@ -472,6 +523,43 @@ ${productCases.map(c => {
   return `- **Case #${ci.caseNumber || c.caseNumber}**: ${ci.subject || 'No subject'}
   - Priority: ${ci.priority}, Status: ${ci.status}, Bucket: ${c.bucket || 'N/A'}`;
 }).join('\n\n')}
+`;
+  } else if (context.type === 'priority_distribution') {
+    const totalCases = context.data?.totalCases || 0;
+    const priorityData = context.data?.priorityFromCases || context.data?.priorityFromCluster || [];
+    
+    contextSection = `
+## Priority Distribution Context
+**Total Cases:** ${totalCases}
+
+### Priority Breakdown:
+| Priority | Cases | % of Total |
+|----------|-------|------------|
+${priorityData.map(p => `| ${p.priority} | ${p.count} | ${p.percentage}% |`).join('\n')}
+
+### Additional Distributions:
+**By Product:**
+${context.data?.distributions?.by_product?.slice(0, 5).map(p => `- ${p.product || 'Unknown'}: ${p.count} cases (${p.percentage}%)`).join('\n') || 'No data'}
+
+**By Complexity:**
+${context.data?.distributions?.by_complexity?.map(c => `- ${c.complexity}: ${c.count} cases (${c.percentage}%)`).join('\n') || 'No data'}
+
+Note: Present the priority data in a clear markdown table. The user asked for priority breakdown/distribution.
+`;
+  } else if (context.type === 'product_distribution') {
+    const totalCases = context.data?.totalCases || 0;
+    const productData = context.data?.productFromCases || context.data?.productFromCluster || [];
+    
+    contextSection = `
+## Product Distribution Context
+**Total Cases:** ${totalCases}
+
+### Product Breakdown:
+| Product | Cases | % of Total |
+|---------|-------|------------|
+${productData.map(p => `| ${p.product} | ${p.count} | ${p.percentage}% |`).join('\n')}
+
+Note: Present the product data in a clear markdown table. The user asked for product breakdown/distribution.
 `;
   } else if (context.type === 'tag_distribution') {
     const closeTags = context.data?.closeTags || [];
