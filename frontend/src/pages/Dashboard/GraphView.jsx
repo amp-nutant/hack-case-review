@@ -1,4 +1,5 @@
 import { useOutletContext } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   FlexLayout,
   Title,
@@ -6,6 +7,8 @@ import {
   StackingLayout,
   Badge,
   HeaderFooterLayout,
+  Select,
+  Button,
 } from '@nutanix-ui/prism-reactjs';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { 
@@ -19,6 +22,7 @@ import {
 } from 'chart.js';
 import { mockDashboardData } from '../../data/mockDashboard';
 import styles from './GraphView.module.css';
+import reportsApi from '../../services/reportsApi';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
@@ -130,7 +134,7 @@ function DonutWidget({ title, subtitle, data, total, centerLabel }) {
   };
 
   return (
-    <div className={styles.widgetCard} style={{ width: '100%' }}>
+    <div className={styles.widgetCard}>
       <HeaderFooterLayout
         header={
           <FlexLayout justifyContent="space-between" alignItems="center" padding="0px-20px">
@@ -180,16 +184,114 @@ function DonutWidget({ title, subtitle, data, total, centerLabel }) {
   );
 }
 
+const actionCategoryMap = {
+  'wrong_closed_tags': 'Wrong Closed Tags',
+  'open_jiras': 'Open JIRAs',
+  'jira_creation': 'JIRA Creation',
+  'kb_creation': 'KB Creation',
+  'customer_update': 'Customer Update',
+  'fixed_jiras': 'Fixed JIRAs',
+  'missing_kb': 'Missing KB',
+  'kb_creation_recommendations': 'KB Creation Recommendations',
+  'jira_creation_needed': 'JIRA Creation Needed',
+};
+
+const getColorBasedOnBucketName = (name) => {
+  const colorMap = {
+    'Bug/Improvement': '#e67e5a',
+    'Customer Assistance': '#f59e42',
+    'Wrong Closure Tags': '#eab308',
+    'RCA-Inconclusive': '#eab308',
+    'RCA not done': '#ea5b08',
+    'Cx Environment': '#34a88f',
+    'Issue Self-Resolved': '#1b6dc6',
+    'Documentation Gap': '#8b5cf6',
+    'Duplicate/Invalid': '#9aa5b5',
+  };
+
+  const colorKey = Object.keys(colorMap).find((key) => key.toLowerCase().includes(name.toLowerCase()));
+  return colorMap[colorKey] || '#9aa5b5';
+};
+
+const getColorForClosedTag = (index) => {
+  const colors = ['#e67e5a', '#eab308', '#06b6d4', '#34a88f', '#1b6dc6', '#8b5cf6', '#f59e42', '#ec4899', '#84cc16', '#f43f5e'];
+  return colors[index % colors.length];
+};
+
+const convertBucketData = (bucketData) => {
+  return bucketData.slice(0, 5).map((bucketObj) => ({
+    name: bucketObj.name,
+    value: bucketObj.count,
+    fill: getColorBasedOnBucketName(bucketObj.name),
+  }));
+};
+
+const convertClosedTagsData = (closedTagsData) => {
+  return closedTagsData.slice(0, 5).map((closedTagObj, index) => ({
+    name: closedTagObj.name,
+    value: closedTagObj.count,
+    fill: getColorForClosedTag(index),
+  }));
+};
+
+const convertTopPriorityActionsData = (topPriorityActions) => {
+  return topPriorityActions.map((topPriorityAction, index) => ({
+    name: actionCategoryMap[topPriorityAction.category],
+    value: topPriorityAction.cases,
+    fill: getColorForClosedTag(index),
+  }));
+};
+
+// Chart filter options
+const CHART_FILTER_OPTIONS = [
+  { key: 'all', label: 'All Charts' },
+  { key: 'buckets', label: 'Case Buckets' },
+  { key: 'actions', label: 'Top Actions' },
+  { key: 'closed_tags', label: 'Closed Tags' },
+];
+
 function GraphView() {
   const { reportId } = useOutletContext();
+  const [reportSummary, setReportSummary] = useState(null);
+  const [selectedChart, setSelectedChart] = useState('all');
+
+  const fetchReportSummary = async (id) => {
+    const reportDetails = await reportsApi.getById(id);
+    setReportSummary(reportDetails.data);
+  };
+
+  useEffect(() => {
+    if (reportId) {
+      fetchReportSummary(reportId);
+    }
+  }, [reportId]);
+
+  const handleChartFilterChange = (value) => {
+    setSelectedChart(value);
+  };
+
+  const handleExportCharts = () => {
+    // TODO: Implement chart export functionality
+    alert('Export functionality coming soon!');
+  };
+
+  // Filter visibility based on selected chart
+  const showBuckets = selectedChart === 'all' || selectedChart === 'buckets';
+  const showActions = selectedChart === 'all' || selectedChart === 'actions';
+  const showClosedTags = selectedChart === 'all' || selectedChart === 'closed_tags';
 
   // All 7 buckets
-  const bucketData = mockDashboardData.buckets.items;
-  const totalCases = bucketData.reduce((sum, b) => sum + b.value, 0);
+  let bucketData = reportSummary?.reviewSummary?.buckets || [];
+  bucketData = convertBucketData(bucketData);
+  const totalCases = reportSummary?.caseCount;
 
   // All closed tags
-  const closedTagsData = mockDashboardData.closedTags.items;
-  const totalTaggedCases = closedTagsData.reduce((sum, t) => sum + t.value, 0);
+  let closedTagsData = reportSummary?.reviewSummary?.closedTags || [];
+  closedTagsData = convertClosedTagsData(closedTagsData);
+  const totalClosedTagCases = closedTagsData.reduce((sum, t) => sum + t.value, 0);
+
+  let topPriorityActions = reportSummary?.reviewSummary?.actionSummary?.topPriorityActions || [];
+  topPriorityActions = convertTopPriorityActionsData(topPriorityActions);
 
   return (
     <FlexLayout flexDirection="column" itemGap="L" className={styles.graphView} style={{ padding: '24px' }}>
@@ -198,28 +300,69 @@ function GraphView() {
         <FlexLayout alignItems="center" itemGap="L">
           <Title size="h2">Charts & Graphs</Title>
           <FlexLayout alignItems="center" itemGap="S">
-            <Badge color="gray" count={`${totalCases} cases`} />
-            <Badge color="blue" count={`${closedTagsData.length} tags`} />
+            <Badge color="blue" count={`${totalCases} cases`} />
           </FlexLayout>
+        </FlexLayout>
+
+        {/* Filter and Export Controls */}
+        <FlexLayout alignItems="center" itemGap="M">
+          <FlexLayout alignItems="center" itemGap="S">
+            <TextLabel type={TextLabel.TEXT_LABEL_TYPE.SECONDARY}>Filter by:</TextLabel>
+            <Select
+              style={{ width: '180px' }}
+              value={selectedChart}
+              onChange={handleChartFilterChange}
+              rowsData={CHART_FILTER_OPTIONS.map((option) => ({
+                key: option.key,
+                label: option.label,
+              }))}
+            />
+          </FlexLayout>
+          <Button
+            type={Button.ButtonTypes.SECONDARY}
+            onClick={handleExportCharts}
+          >
+            Export Charts
+          </Button>
         </FlexLayout>
       </FlexLayout>
 
-      {/* Case Buckets - Donut Chart */}
-      <DonutWidget 
-        title="Case Buckets"
-        subtitle="All 7 Buckets"
-        data={bucketData}
-        total={totalCases}
-        centerLabel="Total Cases"
-      />
+      {/* Donut Charts Row */}
+      {(showBuckets || showActions) && (
+        <FlexLayout alignItems="flex-start" itemGap="L">
+          {/* Case Buckets - Donut Chart */}
+          {showBuckets && (
+            <DonutWidget 
+              title="Case Buckets"
+              subtitle="Top 5 Buckets"
+              data={bucketData}
+              total={totalCases}
+              centerLabel="Total Cases"
+            />
+          )}
+
+          {/* Create a donut chart for top issues */}
+          {showActions && (
+            <DonutWidget 
+              title="Top Actions"
+              subtitle="Top 3 Actions"
+              data={topPriorityActions}
+              total={topPriorityActions.length}
+              centerLabel="Top Actions"
+            />
+          )}
+        </FlexLayout>
+      )}
 
       {/* Closed Tags - Horizontal Bar Chart (better for many items) */}
-      <HorizontalBarWidget 
-        title="Closed Tags"
-        subtitle={`All ${closedTagsData.length} Tags`}
-        data={closedTagsData}
-        total={totalTaggedCases}
-      />
+      {showClosedTags && (
+        <HorizontalBarWidget 
+          title="Closed Tags"
+          subtitle={`Top 5 Closed Tags`}
+          data={closedTagsData}
+          total={totalClosedTagCases}
+        />
+      )}
     </FlexLayout>
   );
 }
