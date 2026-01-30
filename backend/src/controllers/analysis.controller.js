@@ -179,7 +179,7 @@ export const createAnalysis = async (req, res, next) => {
       });
     }
 
-    const analysis = await Analysis.create({
+    const analysis = await Report.create({
       name: String(name).trim(),
       description: description ? String(description).trim() : undefined,
       account: account ? String(account).trim() : undefined,
