@@ -67,7 +67,7 @@ export const getOverview = async (req, res, next) => {
             jiraKeysInCase.add(key);
             const summary =
               jiraItem?.summary || jiraItem?.title || jiraItem?.description || '';
-            const truncatedSummary = truncateLabel(summary, 30);
+            const truncatedSummary = truncateLabel(summary, 50);
             const label = truncatedSummary ? `${key}: ${truncatedSummary}` : `${key}`;
             const existing = kbJiraCounts.get(`JIRA:${key}`) || {
               id: key,
@@ -100,7 +100,7 @@ export const getOverview = async (req, res, next) => {
             kbItem?.id;
 
           if (title) {
-            const key = truncateLabel(String(title), 30);
+            const key = truncateLabel(String(title), 60);
             kbKeysInCase.add(key);
             const label = key;
             const existing = kbJiraCounts.get(`KB:${key}`) || {
